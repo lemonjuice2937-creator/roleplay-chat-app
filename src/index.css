@@ -1,0 +1,46 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-navy-800 text-white font-sans antialiased;
+    overscroll-behavior: none;
+  }
+
+  /* Scrollbar styling */
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-neon/40 rounded-full;
+  }
+
+  /* Hide scrollbar for role bar */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+@layer components {
+  .btn-pill {
+    @apply rounded-full px-6 py-3 font-medium transition-all duration-200 active:scale-95;
+  }
+  .input-pill {
+    @apply rounded-full px-5 py-3 bg-navy-700 text-white placeholder-white/40 outline-none transition-all duration-200 focus:ring-2 focus:ring-neon;
+  }
+}
