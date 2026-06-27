@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
+import { validateImageFile, sanitizeHexColor } from '../lib/sanitize';
 import type { Papel } from '../types/database';
 import { X, Plus, Check, Loader2, Upload, Trash2 } from 'lucide-react';
 
@@ -29,6 +30,13 @@ export default function RoleplayCatalog({ papeis, onClose, onPapeisChanged }: Pr
   async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file || !profile) return;
+
+    const validationError = validateImageFile(file);
+    if (validationError) {
+      alert(validationError);
+      return;
+    }
+
     setUploading(true);
 
     try {
@@ -73,13 +81,13 @@ export default function RoleplayCatalog({ papeis, onClose, onPapeisChanged }: Pr
         user_id: profile.id,
         nome: nome.trim(),
         avatar_url: avatarUrl,
-        cor_balao: corBalao,
-        cor_fonte: corFonte,
+        cor_balao: sanitizeHexColor(corBalao, '#8A2BE2'),
+        cor_fonte: sanitizeHexColor(corFonte, '#FFFFFF'),
         equipado: true,
       });
 
       if (!error) {
-        console.log('[RoleplayCatalog] Papel criado e equipado, chamando onPapeisChanged');
+
         setNome('');
         setAvatarUrl(null);
         setCorBalao('#8A2BE2');

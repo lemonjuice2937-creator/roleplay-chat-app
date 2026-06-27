@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
+import { sanitizeHexColor } from '../lib/sanitize';
 import type { Usuario, Mensagem, Papel, ConfigChat } from '../types/database';
 import { ArrowLeft, Send, Loader2, Theater, BookOpen, ImageIcon } from 'lucide-react';
 import RoleplayCatalog from './RoleplayCatalog';
@@ -149,11 +150,17 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  const MAX_MESSAGE_LENGTH = 5000;
+
   async function handleSend() {
     if (!input.trim() || !profile || sending) return;
+    const texto = input.trim();
+    if (texto.length > MAX_MESSAGE_LENGTH) {
+      alert(`Mensagem muito longa (máx. ${MAX_MESSAGE_LENGTH} caracteres).`);
+      return;
+    }
     setSending(true);
     setError(null);
-    const texto = input.trim();
     setInput('');
 
     const insertData: Record<string, unknown> = {
@@ -162,12 +169,8 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
       texto,
     };
 
-    console.log('[handleSend] roleplayMode:', roleplayMode);
-    console.log('[handleSend] activePapel:', activePapel);
-
     if (roleplayMode && activePapel) {
       insertData.papel_id = activePapel.id;
-      console.log('[handleSend] Sending with papel_id:', activePapel.id);
     }
 
     const { data, error: sendError } = await supabase
@@ -207,11 +210,6 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
 
   const bgOpacity = config?.background_opacity ?? 0.5;
   const bgUrl = config?.background_url;
-
-  // Debug: verificar estado do roleplay
-  console.log('[ChatScreen] roleplayMode:', roleplayMode);
-  console.log('[ChatScreen] activePapel:', activePapel);
-  console.log('[ChatScreen] equippedPapeis:', equippedPapeis);
 
   return (
     <div className="h-screen flex flex-col bg-navy-800 overflow-hidden">
@@ -297,6 +295,8 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
               const allPapeis = [...papeis, ...partnerPapeis];
               const papel = msg.papel || (msg.papel_id ? allPapeis.find(p => p.id === msg.papel_id) : null) || null;
               const isRoleplay = !!msg.papel_id && !!papel;
+              const safeBg = papel ? sanitizeHexColor(papel.cor_balao, '#8A2BE2') : '#8A2BE2';
+              const safeFg = papel ? sanitizeHexColor(papel.cor_fonte, '#FFFFFF') : '#FFFFFF';
 
               return (
                 <div
@@ -309,15 +309,15 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
                       src={papel.avatar_url}
                       alt={papel.nome}
                       className="w-9 h-9 rounded-full object-cover shrink-0 border-2"
-                      style={{ borderColor: papel.cor_balao }}
+                      style={{ borderColor: safeBg }}
                     />
                   ) : isRoleplay && papel ? (
                     <div
                       className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0 border-2"
                       style={{
-                        backgroundColor: papel.cor_balao,
-                        borderColor: papel.cor_balao,
-                        color: papel.cor_fonte,
+                        backgroundColor: safeBg,
+                        borderColor: safeBg,
+                        color: safeFg,
                       }}
                     >
                       {papel.nome.charAt(0).toUpperCase()}
@@ -333,7 +333,7 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
                     {isRoleplay && papel && (
                       <span
                         className="text-xs mb-0.5 px-1"
-                        style={{ color: papel.cor_balao, opacity: 0.7, fontFamily: 'inherit' }}
+                        style={{ color: safeBg, opacity: 0.7, fontFamily: 'inherit' }}
                       >
                         {papel.nome}
                       </span>
@@ -342,7 +342,7 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
                       className="rounded-3xl px-4 py-2.5"
                       style={
                         isRoleplay && papel
-                          ? { backgroundColor: papel.cor_balao, color: papel.cor_fonte }
+                          ? { backgroundColor: safeBg, color: safeFg }
                           : isMine
                             ? { backgroundColor: '#8A2BE2', color: '#FFFFFF' }
                             : { backgroundColor: '#1A1C2D', color: '#FFFFFF' }
@@ -368,7 +368,10 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
             </p>
           ) : (
             <div className="flex gap-2 overflow-x-auto no-scrollbar">
-              {equippedPapeis.map((papel) => (
+              {equippedPapeis.map((papel) => {
+                const bg = sanitizeHexColor(papel.cor_balao, '#8A2BE2');
+                const fg = sanitizeHexColor(papel.cor_fonte, '#FFFFFF');
+                return (
                 <button
                   key={papel.id}
                   onClick={() => setActivePapel(papel)}
@@ -382,16 +385,16 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
                       alt={papel.nome}
                       className="w-12 h-12 rounded-full object-cover border-2"
                       style={{
-                        borderColor: activePapel?.id === papel.id ? papel.cor_balao : 'transparent',
+                        borderColor: activePapel?.id === papel.id ? bg : 'transparent',
                       }}
                     />
                   ) : (
                     <div
                       className="w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold border-2"
                       style={{
-                        backgroundColor: papel.cor_balao,
-                        color: papel.cor_fonte,
-                        borderColor: activePapel?.id === papel.id ? papel.cor_balao : 'transparent',
+                        backgroundColor: bg,
+                        color: fg,
+                        borderColor: activePapel?.id === papel.id ? bg : 'transparent',
                       }}
                     >
                       {papel.nome.charAt(0).toUpperCase()}
@@ -399,7 +402,8 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
                   )}
                   <span className="text-xs text-white/60 max-w-[60px] truncate">{papel.nome}</span>
                 </button>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
