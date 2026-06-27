@@ -26,7 +26,10 @@ export default function PapelAvatar({
 }: Props) {
   const safeBg = sanitizeHexColor(papel.cor_balao, '#8A2BE2');
   const safeFg = sanitizeHexColor(papel.cor_fonte, '#FFFFFF');
-  const resolvedBorderColor = borderColor ?? safeBg;
+  const safeBorderColor = borderColor && borderColor !== 'transparent'
+    ? sanitizeHexColor(borderColor, safeBg)
+    : borderColor;
+  const resolvedBorderColor = safeBorderColor ?? safeBg;
   const borderClasses = showBorder ? (borderSize === 'lg' ? 'border-4' : 'border-2') : '';
 
   if (papel.avatar_url) {
