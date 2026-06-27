@@ -3,9 +3,13 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { sanitizeHexColor } from '../lib/sanitize';
 import type { Usuario, Mensagem, Papel, ConfigChat } from '../types/database';
-import { ArrowLeft, Send, Loader2, Theater, BookOpen, ImageIcon } from 'lucide-react';
+import { ArrowLeft, Send, Theater, BookOpen, ImageIcon } from 'lucide-react';
 import RoleplayCatalog from './RoleplayCatalog';
 import BackgroundSettings from './BackgroundSettings';
+import LoadingSpinner from '../components/LoadingSpinner';
+import UserAvatar from '../components/UserAvatar';
+import PapelAvatar from '../components/PapelAvatar';
+import EmptyState from '../components/EmptyState';
 
 export default function ChatScreen({ chatId, partner, onBack }: { chatId: string; partner: Usuario; onBack: () => void }) {
   const { profile } = useAuth();
@@ -25,7 +29,6 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
   const scrollRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  // Load messages
   const loadMessages = useCallback(async () => {
     const { data, error: msgError } = await supabase
       .from('mensagens')
@@ -46,7 +49,6 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
     setLoading(false);
   }, [chatId]);
 
-  // Load papeis
   const loadPapeis = useCallback(async () => {
     if (!profile) return;
     const { data, error: papeisError } = await supabase
@@ -62,7 +64,6 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
       setEquippedPapeis((data as Papel[]).filter((p) => p.equipado));
     }
 
-    // Load partner's papeis
     const { data: partnerData, error: partnerPapeisError } = await supabase
       .from('papeis')
       .select('*')
@@ -75,7 +76,6 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
     }
   }, [profile, partner.id]);
 
-  // Load config
   const loadConfig = useCallback(async () => {
     if (!profile) return;
     const { data, error: configError } = await supabase
@@ -98,10 +98,8 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
     loadConfig();
   }, [loadMessages, loadPapeis, loadConfig]);
 
-  // Sync activePapel with equippedPapeis changes
   useEffect(() => {
     if (roleplayMode && equippedPapeis.length > 0) {
-      // If no activePapel or current activePapel is no longer equipped, select first equipped
       if (!activePapel || !equippedPapeis.some(p => p.id === activePapel.id)) {
         setActivePapel(equippedPapeis[0]);
       }
@@ -110,7 +108,6 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
     }
   }, [equippedPapeis, roleplayMode, activePapel]);
 
-  // Realtime subscription
   useEffect(() => {
     const channel = supabase
       .channel(`mensagens:${chatId}`)
@@ -119,7 +116,6 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
         (payload) => {
           const newMsg = payload.new as Mensagem;
           if (!messages.some((m) => m.id === newMsg.id)) {
-            // Fetch the full message with joins
             (async () => {
               const { data, error: fetchError } = await supabase
                 .from('mensagens')
@@ -145,7 +141,6 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
     return () => { supabase.removeChannel(channel); };
   }, [chatId, messages]);
 
-  // Auto-scroll
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
@@ -211,6 +206,18 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
   const bgOpacity = config?.background_opacity ?? 0.5;
   const bgUrl = config?.background_url;
 
+  function renderMessageAvatar(isMine: boolean, papel: Papel | null, isRoleplay: boolean) {
+    if (isRoleplay && papel) {
+      return <PapelAvatar papel={papel} size="sm" showBorder />;
+    }
+    return (
+      <UserAvatar
+        displayName={(isMine ? profile?.display_name : partner.display_name) ?? ''}
+        size="sm"
+      />
+    );
+  }
+
   return (
     <div className="h-screen flex flex-col bg-navy-800 overflow-hidden">
       {/* Header */}
@@ -220,16 +227,13 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
         </button>
 
         <div className="flex items-center gap-2.5 flex-1 min-w-0">
-          <div className="w-10 h-10 rounded-full bg-navy-600 flex items-center justify-center font-bold shrink-0">
-            {partner.display_name.charAt(0).toUpperCase()}
-          </div>
+          <UserAvatar displayName={partner.display_name} />
           <div className="min-w-0">
             <p className="font-medium truncate leading-tight">{partner.display_name}</p>
             <p className="text-white/40 text-xs truncate">@{partner.username}</p>
           </div>
         </div>
 
-        {/* Roleplay toggle */}
         <button
           onClick={toggleRoleplay}
           className={`w-10 h-10 rounded-full flex items-center justify-center transition active:scale-90 ${
@@ -240,7 +244,6 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
           <Theater size={18} />
         </button>
 
-        {/* Catalog */}
         <button
           onClick={() => setShowCatalog(true)}
           className="w-10 h-10 rounded-full bg-navy-600 flex items-center justify-center active:scale-90 transition"
@@ -249,7 +252,6 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
           <BookOpen size={18} className="text-white/70" />
         </button>
 
-        {/* Background settings */}
         <button
           onClick={() => setShowBgSettings(true)}
           className="w-10 h-10 rounded-full bg-navy-600 flex items-center justify-center active:scale-90 transition"
@@ -261,7 +263,6 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
 
       {/* Messages area */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto relative">
-        {/* Background layer (z-0) */}
         {bgUrl && (
           <div className="absolute inset-0 z-0">
             <img src={bgUrl} alt="" className="w-full h-full object-cover" />
@@ -272,7 +273,6 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
           </div>
         )}
 
-        {/* Messages (z-10) */}
         <div className="relative z-10 px-4 py-4 space-y-2 min-h-full">
           {error && (
             <div className="bg-red-500/20 border border-red-500/30 rounded-2xl px-4 py-2.5 mb-2">
@@ -281,17 +281,13 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
           )}
           {loading ? (
             <div className="flex justify-center py-10">
-              <Loader2 size={24} className="animate-spin text-neon" />
+              <LoadingSpinner />
             </div>
           ) : messages.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 text-center">
-              <p className="text-white/30">Nenhuma mensagem ainda</p>
-              <p className="text-white/20 text-sm mt-1">Diga olá!</p>
-            </div>
+            <EmptyState title="Nenhuma mensagem ainda" subtitle="Diga olá!" />
           ) : (
             messages.map((msg) => {
               const isMine = msg.sender_id === profile?.id;
-              // Try papel from join first, then fallback to combined local papeis arrays
               const allPapeis = [...papeis, ...partnerPapeis];
               const papel = msg.papel || (msg.papel_id ? allPapeis.find(p => p.id === msg.papel_id) : null) || null;
               const isRoleplay = !!msg.papel_id && !!papel;
@@ -303,32 +299,8 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
                   key={msg.id}
                   className={`flex gap-2.5 ${isMine ? 'flex-row-reverse' : 'flex-row'}`}
                 >
-                  {/* Avatar */}
-                  {isRoleplay && papel?.avatar_url ? (
-                    <img
-                      src={papel.avatar_url}
-                      alt={papel.nome}
-                      className="w-9 h-9 rounded-full object-cover shrink-0 border-2"
-                      style={{ borderColor: safeBg }}
-                    />
-                  ) : isRoleplay && papel ? (
-                    <div
-                      className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0 border-2"
-                      style={{
-                        backgroundColor: safeBg,
-                        borderColor: safeBg,
-                        color: safeFg,
-                      }}
-                    >
-                      {papel.nome.charAt(0).toUpperCase()}
-                    </div>
-                  ) : (
-                    <div className="w-9 h-9 rounded-full bg-navy-600 flex items-center justify-center text-sm font-bold shrink-0">
-                      {(isMine ? profile?.display_name : partner.display_name)?.charAt(0).toUpperCase()}
-                    </div>
-                  )}
+                  {renderMessageAvatar(isMine, papel, isRoleplay)}
 
-                  {/* Bubble */}
                   <div className={`max-w-[75%] ${isMine ? 'items-end' : 'items-start'} flex flex-col`}>
                     {isRoleplay && papel && (
                       <span
@@ -368,10 +340,7 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
             </p>
           ) : (
             <div className="flex gap-2 overflow-x-auto no-scrollbar">
-              {equippedPapeis.map((papel) => {
-                const bg = sanitizeHexColor(papel.cor_balao, '#8A2BE2');
-                const fg = sanitizeHexColor(papel.cor_fonte, '#FFFFFF');
-                return (
+              {equippedPapeis.map((papel) => (
                 <button
                   key={papel.id}
                   onClick={() => setActivePapel(papel)}
@@ -379,31 +348,15 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
                     activePapel?.id === papel.id ? 'scale-105' : 'opacity-70'
                   }`}
                 >
-                  {papel.avatar_url ? (
-                    <img
-                      src={papel.avatar_url}
-                      alt={papel.nome}
-                      className="w-12 h-12 rounded-full object-cover border-2"
-                      style={{
-                        borderColor: activePapel?.id === papel.id ? bg : 'transparent',
-                      }}
-                    />
-                  ) : (
-                    <div
-                      className="w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold border-2"
-                      style={{
-                        backgroundColor: bg,
-                        color: fg,
-                        borderColor: activePapel?.id === papel.id ? bg : 'transparent',
-                      }}
-                    >
-                      {papel.nome.charAt(0).toUpperCase()}
-                    </div>
-                  )}
+                  <PapelAvatar
+                    papel={papel}
+                    size="md"
+                    showBorder
+                    borderColor={activePapel?.id === papel.id ? papel.cor_balao : 'transparent'}
+                  />
                   <span className="text-xs text-white/60 max-w-[60px] truncate">{papel.nome}</span>
                 </button>
-                );
-              })}
+              ))}
             </div>
           )}
         </div>
@@ -425,12 +378,11 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
             disabled={!input.trim() || sending}
             className="w-12 h-12 rounded-full bg-neon flex items-center justify-center shrink-0 active:scale-90 transition disabled:opacity-40"
           >
-            {sending ? <Loader2 size={20} className="animate-spin text-white" /> : <Send size={20} className="text-white" />}
+            {sending ? <LoadingSpinner size={20} className="text-white" /> : <Send size={20} className="text-white" />}
           </button>
         </div>
       </div>
 
-      {/* Catalog Modal */}
       {showCatalog && (
         <RoleplayCatalog
           papeis={papeis}
@@ -439,7 +391,6 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
         />
       )}
 
-      {/* Background Settings Modal */}
       {showBgSettings && (
         <BackgroundSettings
           chatId={chatId}

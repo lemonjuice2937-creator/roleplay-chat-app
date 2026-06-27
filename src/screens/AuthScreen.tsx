@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Theater, Loader2 } from 'lucide-react';
+import { Theater } from 'lucide-react';
+import LoadingSpinner from '../components/LoadingSpinner';
 
 export default function AuthScreen() {
   const { signIn, signUp } = useAuth();
@@ -102,7 +103,7 @@ export default function AuthScreen() {
               disabled={loading}
               className="btn-pill w-full bg-neon text-white flex items-center justify-center gap-2 disabled:opacity-50"
             >
-              {loading && <Loader2 size={18} className="animate-spin" />}
+              {loading && <LoadingSpinner size={18} className="text-white" />}
               {mode === 'login' ? 'Entrar' : 'Criar conta'}
             </button>
           </form>

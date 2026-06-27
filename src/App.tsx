@@ -4,7 +4,7 @@ import AuthScreen from './screens/AuthScreen';
 import HomeScreen from './screens/HomeScreen';
 import ChatScreen from './screens/ChatScreen';
 import type { Usuario } from './types/database';
-import { Loader2 } from 'lucide-react';
+import LoadingSpinner from './components/LoadingSpinner';
 
 function AppContent() {
   const { session, loading } = useAuth();
@@ -13,7 +13,7 @@ function AppContent() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-navy-800">
-        <Loader2 size={32} className="animate-spin text-neon" />
+        <LoadingSpinner size={32} />
       </div>
     );
   }

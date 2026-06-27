@@ -2,8 +2,11 @@ import { useState, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { validateImageFile } from '../lib/sanitize';
+import { uploadImage } from '../lib/uploadImage';
 import type { ConfigChat } from '../types/database';
-import { X, Upload, Loader2, Check } from 'lucide-react';
+import { Upload, Check } from 'lucide-react';
+import ModalSheet from '../components/ModalSheet';
+import LoadingSpinner from '../components/LoadingSpinner';
 
 interface Props {
   chatId: string;
@@ -34,20 +37,14 @@ export default function BackgroundSettings({ chatId, config, onClose, onConfigUp
     setUploading(true);
     setError(null);
 
-    const ext = file.name.split('.').pop();
-    const path = `backgrounds/${profile.id}/${chatId}/${Date.now()}.${ext}`;
-
-    const { error: upErr } = await supabase.storage
-      .from('imagens')
-      .upload(path, file, { cacheControl: '3600', upsert: true });
-
-    if (upErr) {
-      console.error('Background upload failed:', upErr.message);
-      setError('Erro ao enviar imagem: ' + upErr.message);
-    } else {
-      const { data: { publicUrl } } = supabase.storage.from('imagens').getPublicUrl(path);
+    const publicUrl = await uploadImage(file, `backgrounds/${profile.id}`, chatId);
+    if (publicUrl) {
       setBgUrl(publicUrl);
+    } else {
+      console.error('Background upload failed');
+      setError('Erro ao enviar imagem');
     }
+
     setUploading(false);
   }
 
@@ -71,7 +68,7 @@ export default function BackgroundSettings({ chatId, config, onClose, onConfigUp
 
     if (saveError) {
       console.error('Failed to save background config:', saveError.message);
-      setError('Erro ao salvar configura\u00e7\u00e3o');
+      setError('Erro ao salvar configuração');
     } else if (data) {
       onConfigUpdated(data as ConfigChat);
       onClose();
@@ -84,91 +81,79 @@ export default function BackgroundSettings({ chatId, config, onClose, onConfigUp
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm" onClick={onClose}>
-      <div
-        className="w-full sm:max-w-md bg-navy-700 rounded-t-[2rem] sm:rounded-[2rem] max-h-[85vh] flex flex-col"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-white/5">
-          <h2 className="text-lg font-bold">Personalizar Fundo</h2>
-          <button onClick={onClose} className="w-9 h-9 rounded-full bg-navy-600 flex items-center justify-center active:scale-90 transition">
-            <X size={18} className="text-white/60" />
-          </button>
-        </div>
-
-        <div className="flex-1 overflow-y-auto p-5 space-y-5">
-          {/* Preview */}
-          <div className="relative w-full h-40 rounded-3xl overflow-hidden bg-navy-900">
-            {bgUrl ? (
-              <>
-                <img src={bgUrl} alt="Preview" className="absolute inset-0 w-full h-full object-cover" />
-                <div className="absolute inset-0 bg-navy-800" style={{ opacity }} />
-              </>
-            ) : (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <p className="text-white/30 text-sm">Sem fundo personalizado</p>
-              </div>
-            )}
-          </div>
-
-          {error && (
-            <p className="text-red-400 text-sm text-center">{error}</p>
-          )}
-
-          {/* Upload */}
-          <div>
-            <input ref={fileRef} type="file" accept="image/*" onChange={handleUpload} className="hidden" />
-            <button
-              onClick={() => fileRef.current?.click()}
-              disabled={uploading}
-              className="btn-pill w-full bg-navy-600 text-white flex items-center justify-center gap-2"
-            >
-              {uploading ? <Loader2 size={18} className="animate-spin" /> : <Upload size={18} />}
-              {bgUrl ? 'Trocar imagem' : 'Enviar imagem'}
-            </button>
-            {bgUrl && (
-              <button
-                onClick={handleRemove}
-                className="btn-pill w-full bg-transparent text-red-400 mt-2 text-sm"
-              >
-                Remover fundo
-              </button>
-            )}
-          </div>
-
-          {/* Opacity slider */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="text-white/50 text-sm">Opacidade da camada escura</label>
-              <span className="text-neon font-medium text-sm">{Math.round(opacity * 100)}%</span>
+    <ModalSheet
+      title="Personalizar Fundo"
+      onClose={onClose}
+      footer={
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="btn-pill w-full bg-neon text-white flex items-center justify-center gap-2 disabled:opacity-40"
+        >
+          {saving ? <LoadingSpinner size={18} className="text-white" /> : <Check size={18} />}
+          Salvar
+        </button>
+      }
+    >
+      <div className="space-y-5">
+        {/* Preview */}
+        <div className="relative w-full h-40 rounded-3xl overflow-hidden bg-navy-900">
+          {bgUrl ? (
+            <>
+              <img src={bgUrl} alt="Preview" className="absolute inset-0 w-full h-full object-cover" />
+              <div className="absolute inset-0 bg-navy-800" style={{ opacity }} />
+            </>
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <p className="text-white/30 text-sm">Sem fundo personalizado</p>
             </div>
-            <input
-              type="range"
-              min="0"
-              max="100"
-              value={Math.round(opacity * 100)}
-              onChange={(e) => setOpacity(Number(e.target.value) / 100)}
-              className="w-full h-2 rounded-full appearance-none cursor-pointer bg-navy-900 accent-neon"
-            />
-            <p className="text-white/30 text-xs mt-2">
-              Maior opacidade = fundo mais escuro = mensagens mais legíveis
-            </p>
-          </div>
+          )}
         </div>
 
-        {/* Save */}
-        <div className="p-4">
+        {error && (
+          <p className="text-red-400 text-sm text-center">{error}</p>
+        )}
+
+        {/* Upload */}
+        <div>
+          <input ref={fileRef} type="file" accept="image/*" onChange={handleUpload} className="hidden" />
           <button
-            onClick={handleSave}
-            disabled={saving}
-            className="btn-pill w-full bg-neon text-white flex items-center justify-center gap-2 disabled:opacity-40"
+            onClick={() => fileRef.current?.click()}
+            disabled={uploading}
+            className="btn-pill w-full bg-navy-600 text-white flex items-center justify-center gap-2"
           >
-            {saving ? <Loader2 size={18} className="animate-spin" /> : <Check size={18} />}
-            Salvar
+            {uploading ? <LoadingSpinner size={18} className="text-white" /> : <Upload size={18} />}
+            {bgUrl ? 'Trocar imagem' : 'Enviar imagem'}
           </button>
+          {bgUrl && (
+            <button
+              onClick={handleRemove}
+              className="btn-pill w-full bg-transparent text-red-400 mt-2 text-sm"
+            >
+              Remover fundo
+            </button>
+          )}
+        </div>
+
+        {/* Opacity slider */}
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <label className="text-white/50 text-sm">Opacidade da camada escura</label>
+            <span className="text-neon font-medium text-sm">{Math.round(opacity * 100)}%</span>
+          </div>
+          <input
+            type="range"
+            min="0"
+            max="100"
+            value={Math.round(opacity * 100)}
+            onChange={(e) => setOpacity(Number(e.target.value) / 100)}
+            className="w-full h-2 rounded-full appearance-none cursor-pointer bg-navy-900 accent-neon"
+          />
+          <p className="text-white/30 text-xs mt-2">
+            Maior opacidade = fundo mais escuro = mensagens mais legíveis
+          </p>
         </div>
       </div>
-    </div>
+    </ModalSheet>
   );
 }

@@ -2,7 +2,10 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import type { Usuario, Chat } from '../types/database';
-import { Search, MessageCircle, LogOut, Theater, Loader2 } from 'lucide-react';
+import { Search, MessageCircle, LogOut, Theater } from 'lucide-react';
+import LoadingSpinner from '../components/LoadingSpinner';
+import UserAvatar from '../components/UserAvatar';
+import EmptyState from '../components/EmptyState';
 
 interface ChatWithPartner extends Chat {
   partner: Usuario;
@@ -162,16 +165,14 @@ export default function HomeScreen({ onOpenChat }: { onOpenChat: (chatId: string
             disabled={searching}
             className="btn-pill bg-neon text-white px-5"
           >
-            {searching ? <Loader2 size={18} className="animate-spin" /> : 'Buscar'}
+            {searching ? <LoadingSpinner size={18} className="text-white" /> : 'Buscar'}
           </button>
         </div>
 
         {searchResult && (
           <div className="mt-3 bg-navy-700 rounded-3xl p-4 flex items-center justify-between animate-in fade-in slide-in-from-top-2 duration-200">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-navy-600 flex items-center justify-center text-lg font-bold">
-                {searchResult.display_name.charAt(0).toUpperCase()}
-              </div>
+              <UserAvatar displayName={searchResult.display_name} size="lg" />
               <div>
                 <p className="font-medium">{searchResult.display_name}</p>
                 <p className="text-white/40 text-sm">@{searchResult.username}</p>
@@ -200,14 +201,14 @@ export default function HomeScreen({ onOpenChat }: { onOpenChat: (chatId: string
         <h2 className="text-white/40 text-sm font-medium mb-3 px-1">Conversas</h2>
         {loading ? (
           <div className="flex justify-center py-10">
-            <Loader2 size={24} className="animate-spin text-neon" />
+            <LoadingSpinner />
           </div>
         ) : chats.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-center">
-            <MessageCircle size={48} className="text-white/20 mb-4" />
-            <p className="text-white/40">Nenhuma conversa ainda</p>
-            <p className="text-white/20 text-sm mt-1">Busque um amigo pelo @username</p>
-          </div>
+          <EmptyState
+            icon={<MessageCircle size={48} className="text-white/20" />}
+            title="Nenhuma conversa ainda"
+            subtitle="Busque um amigo pelo @username"
+          />
         ) : (
           <div className="space-y-2">
             {chats.map((chat) => (
@@ -216,9 +217,7 @@ export default function HomeScreen({ onOpenChat }: { onOpenChat: (chatId: string
                 onClick={() => onOpenChat(chat.id, chat.partner)}
                 className="w-full bg-navy-700 rounded-3xl p-4 flex items-center gap-3 active:scale-[0.98] transition text-left"
               >
-                <div className="w-12 h-12 rounded-full bg-navy-600 flex items-center justify-center text-lg font-bold shrink-0">
-                  {chat.partner.display_name.charAt(0).toUpperCase()}
-                </div>
+                <UserAvatar displayName={chat.partner.display_name} size="lg" />
                 <div className="flex-1 min-w-0">
                   <p className="font-medium truncate">{chat.partner.display_name}</p>
                   <p className="text-white/40 text-sm truncate">
