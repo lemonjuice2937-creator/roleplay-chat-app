@@ -11,7 +11,7 @@ interface Props {
 
 const sizeClasses = {
   sm: 'w-9 h-9 text-sm',
-  md: 'w-12 h-12 text-sm',
+  md: 'w-12 h-12 text-base',
   lg: 'w-24 h-24 text-3xl',
 };
 
