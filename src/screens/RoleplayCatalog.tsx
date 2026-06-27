@@ -289,21 +289,24 @@ export default function RoleplayCatalog({ papeis, onClose, onPapeisChanged }: Pr
                 <span className="text-xs text-white/40">Novo</span>
               </button>
 
-              {papeis.map((papel) => (
+              {papeis.map((papel) => {
+                const bg = sanitizeHexColor(papel.cor_balao, '#8A2BE2');
+                const fg = sanitizeHexColor(papel.cor_fonte, '#FFFFFF');
+                return (
                 <button
                   key={papel.id}
                   onClick={() => setSelectedPapel(papel)}
                   className={`aspect-square rounded-3xl flex flex-col items-center justify-center gap-1.5 transition active:scale-95 ${
                     papel.equipado ? 'opacity-100' : 'opacity-50'
                   }`}
-                  style={{ backgroundColor: papel.cor_balao + '20' }}
+                  style={{ backgroundColor: bg + '20' }}
                 >
                   {papel.avatar_url ? (
                     <img src={papel.avatar_url} alt={papel.nome} className="w-12 h-12 rounded-full object-cover" />
                   ) : (
                     <div
                       className="w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold"
-                      style={{ backgroundColor: papel.cor_balao, color: papel.cor_fonte }}
+                      style={{ backgroundColor: bg, color: fg }}
                     >
                       {papel.nome.charAt(0).toUpperCase()}
                     </div>
@@ -311,7 +314,8 @@ export default function RoleplayCatalog({ papeis, onClose, onPapeisChanged }: Pr
                   <span className="text-xs text-white/70 truncate max-w-full px-1">{papel.nome}</span>
                   {papel.equipado && <Check size={14} className="text-neon" />}
                 </button>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
@@ -331,7 +335,10 @@ export default function RoleplayCatalog({ papeis, onClose, onPapeisChanged }: Pr
       </div>
 
       {/* Papel detail overlay */}
-      {selectedPapel && (
+      {selectedPapel && (() => {
+        const selBg = sanitizeHexColor(selectedPapel.cor_balao, '#8A2BE2');
+        const selFg = sanitizeHexColor(selectedPapel.cor_fonte, '#FFFFFF');
+        return (
         <div
           className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 backdrop-blur-sm p-6"
           onClick={() => setSelectedPapel(null)}
@@ -341,17 +348,17 @@ export default function RoleplayCatalog({ papeis, onClose, onPapeisChanged }: Pr
             onClick={(e) => e.stopPropagation()}
           >
             {selectedPapel.avatar_url ? (
-              <img src={selectedPapel.avatar_url} alt={selectedPapel.nome} className="w-24 h-24 rounded-full object-cover mx-auto mb-3 border-4" style={{ borderColor: selectedPapel.cor_balao }} />
+              <img src={selectedPapel.avatar_url} alt={selectedPapel.nome} className="w-24 h-24 rounded-full object-cover mx-auto mb-3 border-4" style={{ borderColor: selBg }} />
             ) : (
               <div
                 className="w-24 h-24 rounded-full flex items-center justify-center text-3xl font-bold mx-auto mb-3 border-4"
-                style={{ backgroundColor: selectedPapel.cor_balao, color: selectedPapel.cor_fonte, borderColor: selectedPapel.cor_balao }}
+                style={{ backgroundColor: selBg, color: selFg, borderColor: selBg }}
               >
                 {selectedPapel.nome.charAt(0).toUpperCase()}
               </div>
             )}
             <h3 className="text-xl font-bold mb-1">{selectedPapel.nome}</h3>
-            <div className="inline-block rounded-full px-3 py-1 text-xs mb-5" style={{ backgroundColor: selectedPapel.cor_balao, color: selectedPapel.cor_fonte }}>
+            <div className="inline-block rounded-full px-3 py-1 text-xs mb-5" style={{ backgroundColor: selBg, color: selFg }}>
               {selectedPapel.equipado ? 'Equipado' : 'Deixado'}
             </div>
 
@@ -371,7 +378,8 @@ export default function RoleplayCatalog({ papeis, onClose, onPapeisChanged }: Pr
             </div>
           </div>
         </div>
-      )}
+        );
+      })()}
     </div>
   );
 }

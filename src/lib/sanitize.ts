@@ -1,4 +1,4 @@
-const HEX_COLOR_RE = /^#[0-9A-Fa-f]{3,8}$/;
+const HEX_COLOR_RE = /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{4}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$/;
 
 /**
  * Validates that a string is a safe CSS hex color.
