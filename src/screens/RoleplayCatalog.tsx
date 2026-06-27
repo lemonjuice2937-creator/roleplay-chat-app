@@ -58,10 +58,15 @@ export default function RoleplayCatalog({ papeis, onClose, onPapeisChanged }: Pr
 
     try {
       // DESATIVA OUTROS PAPÉIS PRIMEIRO
-      await supabase
+      const { error: deactivateError } = await supabase
         .from('papeis')
         .update({ equipado: false })
         .eq('user_id', profile.id);
+
+      if (deactivateError) {
+        alert('Erro ao desativar papéis anteriores: ' + deactivateError.message);
+        return;
+      }
 
       // INSERE O NOVO
       const { error } = await supabase.from('papeis').insert({
@@ -98,10 +103,15 @@ export default function RoleplayCatalog({ papeis, onClose, onPapeisChanged }: Pr
     try {
       // SE VAI EQUIPAR, DESATIVA OS OUTROS PRIMEIRO PARA NÃO TER DUPLICADOS
       if (newEquipado) {
-        await supabase
+        const { error: deactivateError } = await supabase
           .from('papeis')
           .update({ equipado: false })
           .eq('user_id', profile.id);
+
+        if (deactivateError) {
+          alert('Erro ao desativar papéis: ' + deactivateError.message);
+          return;
+        }
       }
 
       const { error } = await supabase
@@ -122,10 +132,13 @@ export default function RoleplayCatalog({ papeis, onClose, onPapeisChanged }: Pr
 
   async function deletePapel(papel: Papel) {
     const { error } = await supabase.from('papeis').delete().eq('id', papel.id);
-    if (!error) {
-      onPapeisChanged();
-      setSelectedPapel(null);
+    if (error) {
+      console.error('Failed to delete papel:', error.message);
+      alert('Erro ao deletar papel: ' + error.message);
+      return;
     }
+    onPapeisChanged();
+    setSelectedPapel(null);
   }
 
   return (

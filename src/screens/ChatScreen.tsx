@@ -20,12 +20,13 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
   const [showCatalog, setShowCatalog] = useState(false);
   const [showBgSettings, setShowBgSettings] = useState(false);
   const [config, setConfig] = useState<ConfigChat | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   // Load messages
   const loadMessages = useCallback(async () => {
-    const { data } = await supabase
+    const { data, error: msgError } = await supabase
       .from('mensagens')
       .select(`
         *,
@@ -35,31 +36,40 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
       .eq('chat_id', chatId)
       .order('created_at', { ascending: true });
 
-    if (data) setMessages(data as unknown as Mensagem[]);
+    if (msgError) {
+      console.error('Failed to load messages:', msgError.message);
+      setError('Erro ao carregar mensagens');
+    } else if (data) {
+      setMessages(data as unknown as Mensagem[]);
+    }
     setLoading(false);
   }, [chatId]);
 
   // Load papeis
   const loadPapeis = useCallback(async () => {
     if (!profile) return;
-    const { data } = await supabase
+    const { data, error: papeisError } = await supabase
       .from('papeis')
       .select('*')
       .eq('user_id', profile.id)
       .order('created_at', { ascending: false });
 
-    if (data) {
+    if (papeisError) {
+      console.error('Failed to load papeis:', papeisError.message);
+    } else if (data) {
       setPapeis(data as Papel[]);
       setEquippedPapeis((data as Papel[]).filter((p) => p.equipado));
     }
 
     // Load partner's papeis
-    const { data: partnerData } = await supabase
+    const { data: partnerData, error: partnerPapeisError } = await supabase
       .from('papeis')
       .select('*')
       .eq('user_id', partner.id);
 
-    if (partnerData) {
+    if (partnerPapeisError) {
+      console.error('Failed to load partner papeis:', partnerPapeisError.message);
+    } else if (partnerData) {
       setPartnerPapeis(partnerData as Papel[]);
     }
   }, [profile, partner.id]);
@@ -67,14 +77,18 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
   // Load config
   const loadConfig = useCallback(async () => {
     if (!profile) return;
-    const { data } = await supabase
+    const { data, error: configError } = await supabase
       .from('config_chat')
       .select('*')
       .eq('chat_id', chatId)
       .eq('user_id', profile.id)
       .maybeSingle();
 
-    if (data) setConfig(data as ConfigChat);
+    if (configError) {
+      console.error('Failed to load chat config:', configError.message);
+    } else if (data) {
+      setConfig(data as ConfigChat);
+    }
   }, [chatId, profile]);
 
   useEffect(() => {
@@ -106,11 +120,15 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
           if (!messages.some((m) => m.id === newMsg.id)) {
             // Fetch the full message with joins
             (async () => {
-              const { data } = await supabase
+              const { data, error: fetchError } = await supabase
                 .from('mensagens')
                 .select(`*, papel:papeis(*), sender:usuarios!sender_id(*)`)
                 .eq('id', newMsg.id)
                 .maybeSingle();
+              if (fetchError) {
+                console.error('Failed to fetch new message:', fetchError.message);
+                return;
+              }
               if (data) {
                 setMessages((prev) => {
                   if (prev.some((m) => m.id === data.id)) return prev;
@@ -134,6 +152,7 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
   async function handleSend() {
     if (!input.trim() || !profile || sending) return;
     setSending(true);
+    setError(null);
     const texto = input.trim();
     setInput('');
 
@@ -151,13 +170,17 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
       console.log('[handleSend] Sending with papel_id:', activePapel.id);
     }
 
-    const { data, error } = await supabase
+    const { data, error: sendError } = await supabase
       .from('mensagens')
       .insert(insertData)
       .select(`*, papel:papeis(*), sender:usuarios!sender_id(*)`)
       .single();
 
-    if (!error && data) {
+    if (sendError) {
+      console.error('Failed to send message:', sendError.message);
+      setError('Erro ao enviar mensagem');
+      setInput(texto);
+    } else if (data) {
       setMessages((prev) => prev.some((m) => m.id === data.id) ? prev : [...prev, data as unknown as Mensagem]);
     }
     setSending(false);
@@ -253,6 +276,11 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
 
         {/* Messages (z-10) */}
         <div className="relative z-10 px-4 py-4 space-y-2 min-h-full">
+          {error && (
+            <div className="bg-red-500/20 border border-red-500/30 rounded-2xl px-4 py-2.5 mb-2">
+              <p className="text-red-400 text-sm text-center">{error}</p>
+            </div>
+          )}
           {loading ? (
             <div className="flex justify-center py-10">
               <Loader2 size={24} className="animate-spin text-neon" />
