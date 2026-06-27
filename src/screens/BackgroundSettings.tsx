@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
+import { validateImageFile } from '../lib/sanitize';
 import type { ConfigChat } from '../types/database';
 import { X, Upload, Loader2, Check } from 'lucide-react';
 
@@ -23,6 +24,13 @@ export default function BackgroundSettings({ chatId, config, onClose, onConfigUp
   async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file || !profile) return;
+
+    const validationError = validateImageFile(file);
+    if (validationError) {
+      alert(validationError);
+      return;
+    }
+
     setUploading(true);
     setError(null);
 
