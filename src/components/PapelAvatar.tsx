@@ -5,6 +5,7 @@ interface Props {
   papel: Papel;
   size?: 'sm' | 'md' | 'lg';
   showBorder?: boolean;
+  borderSize?: 'sm' | 'lg';
   borderColor?: string;
   className?: string;
 }
@@ -19,13 +20,14 @@ export default function PapelAvatar({
   papel,
   size = 'md',
   showBorder = false,
+  borderSize = 'sm',
   borderColor,
   className = '',
 }: Props) {
   const safeBg = sanitizeHexColor(papel.cor_balao, '#8A2BE2');
   const safeFg = sanitizeHexColor(papel.cor_fonte, '#FFFFFF');
   const resolvedBorderColor = borderColor ?? safeBg;
-  const borderClasses = showBorder ? 'border-2' : '';
+  const borderClasses = showBorder ? (borderSize === 'lg' ? 'border-4' : 'border-2') : '';
 
   if (papel.avatar_url) {
     return (

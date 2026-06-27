@@ -314,7 +314,7 @@ export default function RoleplayCatalog({ papeis, onClose, onPapeisChanged }: Pr
                 papel={selectedPapel}
                 size="lg"
                 showBorder
-                className="border-4"
+                borderSize="lg"
               />
             </div>
             <h3 className="text-xl font-bold mb-1">{selectedPapel.nome}</h3>
