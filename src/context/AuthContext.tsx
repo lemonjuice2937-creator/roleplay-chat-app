@@ -22,11 +22,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   async function fetchProfile(userId: string) {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('usuarios')
       .select('*')
       .eq('id', userId)
       .maybeSingle();
+    if (error) {
+      console.error('Failed to fetch user profile:', error.message);
+      return;
+    }
     setProfile(data as Usuario | null);
   }
 
@@ -58,23 +62,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function signUp(email: string, password: string, username: string, displayName: string) {
     const cleanUsername = username.toLowerCase().replace(/[^a-z0-9_]/g, '');
 
-    const { data: existing } = await supabase
+    const { data: existing, error: lookupError } = await supabase
       .from('usuarios')
       .select('id')
       .eq('username', cleanUsername)
       .maybeSingle();
 
+    if (lookupError) return { error: 'Erro ao verificar username: ' + lookupError.message };
     if (existing) return { error: 'Este @username já está em uso' };
 
     const { data, error } = await supabase.auth.signUp({ email, password });
     if (error) return { error: error.message };
 
     if (data.user) {
-      await supabase.from('usuarios').upsert({
+      const { error: profileError } = await supabase.from('usuarios').upsert({
         id: data.user.id,
         username: cleanUsername,
         display_name: displayName,
       });
+      if (profileError) return { error: 'Conta criada, mas erro ao salvar perfil: ' + profileError.message };
     }
 
     return { error: null };
@@ -87,7 +93,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   async function signOut() {
-    await supabase.auth.signOut();
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      console.error('Sign-out failed:', error.message);
+    }
     setProfile(null);
   }
 

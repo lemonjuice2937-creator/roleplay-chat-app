@@ -17,6 +17,7 @@ export default function HomeScreen({ onOpenChat }: { onOpenChat: (chatId: string
   const [searchResult, setSearchResult] = useState<Usuario | null>(null);
   const [searching, setSearching] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     loadChats();
@@ -25,12 +26,20 @@ export default function HomeScreen({ onOpenChat }: { onOpenChat: (chatId: string
   async function loadChats() {
     if (!profile) return;
     setLoading(true);
+    setError(null);
 
-    const { data: chatRows } = await supabase
+    const { data: chatRows, error: chatsError } = await supabase
       .from('chats')
       .select('*')
       .or(`user1_id.eq.${profile.id},user2_id.eq.${profile.id}`)
       .order('created_at', { ascending: false });
+
+    if (chatsError) {
+      console.error('Failed to load chats:', chatsError.message);
+      setError('Erro ao carregar conversas');
+      setLoading(false);
+      return;
+    }
 
     if (!chatRows) {
       setLoading(false);
@@ -73,13 +82,21 @@ export default function HomeScreen({ onOpenChat }: { onOpenChat: (chatId: string
     if (!search.trim()) return;
     setSearching(true);
     setSearchResult(null);
+    setError(null);
 
     const cleanUsername = search.trim().toLowerCase().replace(/^@/, '');
-    const { data } = await supabase
+    const { data, error: searchError } = await supabase
       .from('usuarios')
       .select('*')
       .eq('username', cleanUsername)
       .maybeSingle();
+
+    if (searchError) {
+      console.error('Search failed:', searchError.message);
+      setError('Erro ao buscar usu\u00e1rio');
+      setSearching(false);
+      return;
+    }
 
     if (data && data.id !== profile?.id) {
       setSearchResult(data as Usuario);
@@ -91,12 +108,19 @@ export default function HomeScreen({ onOpenChat }: { onOpenChat: (chatId: string
 
   async function startChat(partner: Usuario) {
     if (!profile) return;
-    const { data: chatId, error } = await supabase.rpc('find_or_create_chat', {
+    setError(null);
+    const { data: chatId, error: rpcError } = await supabase.rpc('find_or_create_chat', {
       p_user1: profile.id,
       p_user2: partner.id,
     });
 
-    if (chatId && !error) {
+    if (rpcError) {
+      console.error('Failed to start chat:', rpcError.message);
+      setError('Erro ao iniciar conversa');
+      return;
+    }
+
+    if (chatId) {
       onOpenChat(chatId as string, partner);
     }
   }
@@ -162,8 +186,12 @@ export default function HomeScreen({ onOpenChat }: { onOpenChat: (chatId: string
           </div>
         )}
 
-        {search && !searchResult && !searching && (
+        {search && !searchResult && !searching && !error && (
           <p className="text-white/30 text-sm text-center mt-3">Usuário não encontrado</p>
+        )}
+
+        {error && (
+          <p className="text-red-400 text-sm text-center mt-3">{error}</p>
         )}
       </div>
 

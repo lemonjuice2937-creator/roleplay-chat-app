@@ -17,12 +17,14 @@ export default function BackgroundSettings({ chatId, config, onClose, onConfigUp
   const [opacity, setOpacity] = useState<number>(config?.background_opacity ?? 0.5);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file || !profile) return;
     setUploading(true);
+    setError(null);
 
     const ext = file.name.split('.').pop();
     const path = `backgrounds/${profile.id}/${chatId}/${Date.now()}.${ext}`;
@@ -31,7 +33,10 @@ export default function BackgroundSettings({ chatId, config, onClose, onConfigUp
       .from('imagens')
       .upload(path, file, { cacheControl: '3600', upsert: true });
 
-    if (!upErr) {
+    if (upErr) {
+      console.error('Background upload failed:', upErr.message);
+      setError('Erro ao enviar imagem: ' + upErr.message);
+    } else {
       const { data: { publicUrl } } = supabase.storage.from('imagens').getPublicUrl(path);
       setBgUrl(publicUrl);
     }
@@ -41,6 +46,7 @@ export default function BackgroundSettings({ chatId, config, onClose, onConfigUp
   async function handleSave() {
     if (!profile) return;
     setSaving(true);
+    setError(null);
 
     const payload = {
       chat_id: chatId,
@@ -49,13 +55,16 @@ export default function BackgroundSettings({ chatId, config, onClose, onConfigUp
       background_opacity: opacity,
     };
 
-    const { data, error } = await supabase
+    const { data, error: saveError } = await supabase
       .from('config_chat')
       .upsert(payload, { onConflict: 'chat_id,user_id' })
       .select('*')
       .single();
 
-    if (!error && data) {
+    if (saveError) {
+      console.error('Failed to save background config:', saveError.message);
+      setError('Erro ao salvar configura\u00e7\u00e3o');
+    } else if (data) {
       onConfigUpdated(data as ConfigChat);
       onClose();
     }
@@ -94,6 +103,10 @@ export default function BackgroundSettings({ chatId, config, onClose, onConfigUp
               </div>
             )}
           </div>
+
+          {error && (
+            <p className="text-red-400 text-sm text-center">{error}</p>
+          )}
 
           {/* Upload */}
           <div>
