@@ -2,9 +2,10 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import type { Usuario, Mensagem, Papel, ConfigChat } from '../types/database';
-import { ArrowLeft, Send, Loader2, Theater, BookOpen, ImageIcon } from 'lucide-react';
+import { ArrowLeft, Send, Loader2, Theater, BookOpen, ImageIcon, MapPinned, X, Pencil } from 'lucide-react';
 import RoleplayCatalog from './RoleplayCatalog';
 import BackgroundSettings from './BackgroundSettings';
+import RoleProfileModal from '../components/RoleProfileModal';
 
 export default function ChatScreen({ chatId, partner, onBack }: { chatId: string; partner: Usuario; onBack: () => void }) {
   const { profile } = useAuth();
@@ -19,9 +20,77 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
   const [activePapel, setActivePapel] = useState<Papel | null>(null);
   const [showCatalog, setShowCatalog] = useState(false);
   const [showBgSettings, setShowBgSettings] = useState(false);
+  const [isMenuPapeisAberto, setIsMenuPapeisAberto] = useState(false);
   const [config, setConfig] = useState<ConfigChat | null>(null);
+  const [pinnedNotes, setPinnedNotes] = useState<{id: string, title: string, description: string}[]>([]);
+  const [isPinnedLoreOpen, setIsPinnedLoreOpen] = useState(false);
+  const [isAddNoteOpen, setIsAddNoteOpen] = useState(false);
+  const [noteTitleInput, setNoteTitleInput] = useState('');
+  const [noteDescriptionInput, setNoteDescriptionInput] = useState('');
+  const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
+  const [isLoadingNotes, setIsLoadingNotes] = useState(false);
+  const [selectedProfileRole, setSelectedProfileRole] = useState<any | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  
+  const handleSaveNote = async () => {
+    if (!chatId) return;
+    
+    if (!noteTitleInput.trim()) {
+      console.log('Title is empty, not saving');
+      return;
+    }
+    
+    const newNote = {
+      title: noteTitleInput.trim(),
+      description: noteDescriptionInput.trim(),
+      conversation_id: chatId,
+    };
+    
+    console.log('Saving note:', newNote);
+    
+    const { data, error } = await supabase
+      .from('pinned_notes')
+      .insert([newNote])
+      .select();
+    
+    if (error) {
+      console.error('Supabase error:', error.message);
+      alert('Erro ao salvar nota: ' + error.message);
+      return;
+    }
+    
+    if (data && data[0]) {
+      setPinnedNotes(prev => [...prev, data[0]]);
+      console.log('Note saved successfully:', data[0]);
+      
+      setNoteTitleInput('');
+      setNoteDescriptionInput('');
+      setIsAddNoteOpen(false);
+    }
+  };
+  
+  const handleDeleteNote = async () => {
+    if (!selectedNoteId) return;
+    
+    console.log('Deleting note:', selectedNoteId);
+    
+    const { error } = await supabase
+      .from('pinned_notes')
+      .delete()
+      .eq('id', selectedNoteId);
+    
+    if (error) {
+      console.error('Error deleting:', error.message);
+      alert('Erro ao deletar nota: ' + error.message);
+      return;
+    }
+    
+    setPinnedNotes(pinnedNotes.filter(note => note.id !== selectedNoteId));
+    setSelectedNoteId(null);
+    console.log('Note deleted successfully');
+  };
 
   // Load messages
   const loadMessages = useCallback(async () => {
@@ -71,10 +140,11 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
       .from('config_chat')
       .select('*')
       .eq('chat_id', chatId)
-      .eq('user_id', profile.id)
-      .maybeSingle();
+      .order('id', { ascending: false })
+      .limit(1);
 
-    if (data) setConfig(data as ConfigChat);
+    if (data && data.length > 0) setConfig(data[0] as ConfigChat);
+    else setConfig(null);
   }, [chatId, profile]);
 
   useEffect(() => {
@@ -82,6 +152,29 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
     loadPapeis();
     loadConfig();
   }, [loadMessages, loadPapeis, loadConfig]);
+
+  useEffect(() => {
+    const loadPinnedNotes = async () => {
+      setIsLoadingNotes(true);
+      const { data, error } = await supabase
+        .from('pinned_notes')
+        .select('id, title, description')
+        .eq('conversation_id', chatId)
+        .order('created_at', { ascending: false });
+      
+      setIsLoadingNotes(false);
+      
+      if (!error && data) {
+        setPinnedNotes(data);
+      } else if (error) {
+        console.error('Error loading notes:', error);
+      }
+    };
+    
+    if (chatId) {
+      loadPinnedNotes();
+    }
+  }, [chatId]);
 
   // Sync activePapel with equippedPapeis changes
   useEffect(() => {
@@ -163,6 +256,95 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
     setSending(false);
   }
 
+  function insertShortcut(prefix: string, open?: string, close?: string) {
+    const el = inputRef.current;
+    if (!el) return;
+    const start = el.selectionStart ?? input.length;
+    const end = el.selectionEnd ?? input.length;
+    const selected = input.substring(start, end);
+    let newText: string;
+    let cursorOffset: number;
+    if (open && close) {
+      newText = input.substring(0, start) + open + selected + close + input.substring(end);
+      cursorOffset = start + open.length + selected.length;
+    } else {
+      newText = input.substring(0, start) + prefix + selected + input.substring(end);
+      cursorOffset = start + prefix.length + selected.length;
+    }
+    setInput(newText);
+    setTimeout(() => {
+      el.focus();
+      el.setSelectionRange(cursorOffset, cursorOffset);
+    }, 0);
+  }
+
+  function darkenHex(hex: string, factor: number): string {
+    const h = hex.replace('#', '');
+    const r = Math.round(parseInt(h.substring(0, 2), 16) * factor);
+    const g = Math.round(parseInt(h.substring(2, 4), 16) * factor);
+    const b = Math.round(parseInt(h.substring(4, 6), 16) * factor);
+    return `rgb(${r}, ${g}, ${b})`;
+  }
+
+  function renderFormattedText(text: string) {
+    const lines = text.split('\n');
+    return lines.map((line, i) => {
+      let style: React.CSSProperties = {};
+      let content = line;
+
+      if (line.startsWith('//')) {
+        content = line;
+        style = {};
+      } else if (line.startsWith('>')) {
+        const inner = line.slice(1).trim();
+        return (
+          <span key={i}>
+            {i > 0 && <br />}
+            <span
+              className="inline-block w-full rounded-xl py-1.5 px-3 my-1 text-sm leading-relaxed"
+              style={{
+                backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                color: '#FFFFFF',
+                fontWeight: 'bold',
+                fontStyle: 'italic',
+              }}
+            >
+              {inner}
+            </span>
+          </span>
+        );
+      } else if (line.startsWith('—')) {
+        content = line;
+        style = { fontStyle: 'italic' };
+      } else if (line.startsWith('*') && line.endsWith('*')) {
+        const inner = line.slice(1, -1);
+        return (
+          <span key={i}>
+            {i > 0 && <br />}
+            <span style={{ fontWeight: 'bold', fontStyle: 'italic' }}>{inner}</span>
+          </span>
+        );
+      } else if (line.startsWith('((') && line.endsWith('))')) {
+        const inner = line.slice(2, -2);
+        return (
+          <span key={i}>
+            {i > 0 && <br />}
+            <span>{'(('}</span>
+            <span style={{ fontWeight: 'bold', paddingLeft: '0.25em', paddingRight: '0.25em' }}>{inner}</span>
+            <span>{'))'}</span>
+          </span>
+        );
+      }
+
+      return (
+        <span key={i}>
+          {i > 0 && <br />}
+          <span style={style}>{content}</span>
+        </span>
+      );
+    });
+  }
+
   function handlePapeisUpdated() {
     loadPapeis();
   }
@@ -174,7 +356,10 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
   function toggleRoleplay() {
     setRoleplayMode((prev) => {
       const next = !prev;
-      if (!next) setActivePapel(null);
+      if (!next) {
+        setActivePapel(null);
+        setIsMenuPapeisAberto(false);
+      }
       else if (equippedPapeis.length > 0 && !activePapel) {
         setActivePapel(equippedPapeis[0]);
       }
@@ -190,26 +375,60 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
   console.log('[ChatScreen] activePapel:', activePapel);
   console.log('[ChatScreen] equippedPapeis:', equippedPapeis);
 
+  // Close detail modal if selected note disappears
+  useEffect(() => {
+    if (selectedNoteId && !pinnedNotes.some(n => n.id === selectedNoteId)) {
+      setSelectedNoteId(null);
+    }
+  }, [pinnedNotes, selectedNoteId]);
+
   return (
     <div className="h-screen flex flex-col bg-navy-800 overflow-hidden">
+      <style>{`
+        .avatar-overlay-50::after {
+          content: '';
+          position: absolute;
+          top: 0; left: 0; right: 0; bottom: 0;
+          background: rgba(15, 23, 42, 0.5);
+          border-radius: 9999px;
+          pointer-events: none;
+        }
+        .avatar-overlay-75::after {
+          content: '';
+          position: absolute;
+          top: 0; left: 0; right: 0; bottom: 0;
+          background: rgba(15, 23, 42, 0.75);
+          border-radius: 9999px;
+          pointer-events: none;
+        }
+      `}</style>
       {/* Header */}
       <header className="flex items-center gap-3 px-4 py-3 bg-navy-700 z-20 shrink-0">
         <button onClick={onBack} className="w-10 h-10 rounded-full flex items-center justify-center active:scale-90 transition">
           <ArrowLeft size={20} className="text-white/70" />
         </button>
 
-        <div className="flex items-center gap-2.5 flex-1 min-w-0">
-          <div className="w-10 h-10 rounded-full bg-navy-600 flex items-center justify-center font-bold shrink-0">
-            {partner.display_name.charAt(0).toUpperCase()}
+          <div className="flex items-center gap-2.5 flex-1 min-w-0">
+            <div className="w-10 h-10 rounded-full bg-navy-600 flex items-center justify-center font-bold shrink-0">
+              {partner.display_name.charAt(0).toUpperCase()}
+            </div>
+            <div className="min-w-0">
+              <p className="font-medium truncate leading-tight">{partner.display_name}</p>
+              <p className="text-white/40 text-xs truncate">@{partner.username}</p>
+            </div>
           </div>
-          <div className="min-w-0">
-            <p className="font-medium truncate leading-tight">{partner.display_name}</p>
-            <p className="text-white/40 text-xs truncate">@{partner.username}</p>
-          </div>
-        </div>
 
-        {/* Roleplay toggle */}
-        <button
+          {/* Pinned Lore */}
+          <button
+            onClick={() => setIsPinnedLoreOpen(true)}
+            className="w-10 h-10 rounded-full bg-navy-600 flex items-center justify-center active:scale-90 transition"
+            title="Notas Fixas"
+          >
+            <MapPinned size={20} className="text-white/70" />
+          </button>
+
+          {/* Roleplay toggle */}
+          <button
           onClick={toggleRoleplay}
           className={`w-10 h-10 rounded-full flex items-center justify-center transition active:scale-90 ${
             roleplayMode ? 'bg-neon text-white' : 'bg-navy-600 text-white/50'
@@ -242,7 +461,7 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
       <div ref={scrollRef} className="flex-1 overflow-y-auto relative">
         {/* Background layer (z-0) */}
         {bgUrl && (
-          <div className="absolute inset-0 z-0">
+          <div className="fixed inset-0 z-0">
             <img src={bgUrl} alt="" className="w-full h-full object-cover" />
             <div
               className="absolute inset-0 bg-navy-800"
@@ -277,23 +496,33 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
                 >
                   {/* Avatar */}
                   {isRoleplay && papel?.avatar_url ? (
-                    <img
-                      src={papel.avatar_url}
-                      alt={papel.nome}
-                      className="w-9 h-9 rounded-full object-cover shrink-0 border-2"
-                      style={{ borderColor: papel.cor_balao }}
-                    />
-                  ) : isRoleplay && papel ? (
-                    <div
-                      className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0 border-2"
-                      style={{
-                        backgroundColor: papel.cor_balao,
-                        borderColor: papel.cor_balao,
-                        color: papel.cor_fonte,
-                      }}
+                    <span
+                      onClick={() => setSelectedProfileRole(papel)}
+                      className="cursor-pointer shrink-0"
                     >
-                      {papel.nome.charAt(0).toUpperCase()}
-                    </div>
+                      <img
+                        src={papel.avatar_url}
+                        alt={papel.nome}
+                        className="w-11 h-11 rounded-full object-cover border-2"
+                        style={{ borderColor: papel.cor_balao }}
+                      />
+                    </span>
+                  ) : isRoleplay && papel ? (
+                    <span
+                      onClick={() => setSelectedProfileRole(papel)}
+                      className="cursor-pointer shrink-0"
+                    >
+                      <div
+                        className="w-11 h-11 rounded-full flex items-center justify-center text-base font-bold border-2"
+                        style={{
+                          backgroundColor: papel.cor_balao,
+                          borderColor: papel.cor_balao,
+                          color: papel.cor_fonte,
+                        }}
+                      >
+                        {papel.nome.charAt(0).toUpperCase()}
+                      </div>
+                    </span>
                   ) : (
                     <div className="w-9 h-9 rounded-full bg-navy-600 flex items-center justify-center text-sm font-bold shrink-0">
                       {(isMine ? profile?.display_name : partner.display_name)?.charAt(0).toUpperCase()}
@@ -304,8 +533,8 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
                   <div className={`max-w-[75%] ${isMine ? 'items-end' : 'items-start'} flex flex-col`}>
                     {isRoleplay && papel && (
                       <span
-                        className="text-xs mb-0.5 px-1"
-                        style={{ color: papel.cor_balao, opacity: 0.7, fontFamily: 'inherit' }}
+                        className="text-sm font-bold italic mb-0.5 px-1"
+                        style={{ color: papel.cor_balao, fontFamily: 'inherit' }}
                       >
                         {papel.nome}
                       </span>
@@ -313,14 +542,16 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
                     <div
                       className="rounded-3xl px-4 py-2.5"
                       style={
-                        isRoleplay && papel
-                          ? { backgroundColor: papel.cor_balao, color: papel.cor_fonte }
-                          : isMine
-                            ? { backgroundColor: '#8A2BE2', color: '#FFFFFF' }
-                            : { backgroundColor: '#1A1C2D', color: '#FFFFFF' }
+                        msg.texto.startsWith('>')
+                          ? { backgroundColor: 'rgba(0, 0, 0, 0.7)', color: '#FFFFFF' }
+                          : isRoleplay && papel
+                            ? { backgroundColor: msg.texto.startsWith('//') ? darkenHex(papel.cor_balao, 0.45) : papel.cor_balao, color: papel.cor_fonte }
+                            : isMine
+                              ? { backgroundColor: msg.texto.startsWith('//') ? darkenHex('#8A2BE2', 0.45) : '#8A2BE2', color: '#FFFFFF' }
+                              : { backgroundColor: msg.texto.startsWith('//') ? darkenHex('#1A1C2D', 0.45) : '#1A1C2D', color: '#FFFFFF' }
                       }
                     >
-                      <p className="text-sm leading-relaxed break-words whitespace-pre-wrap" style={{ fontFamily: 'inherit' }}>{msg.texto}</p>
+                      <p className="text-sm leading-relaxed break-words whitespace-pre-wrap" style={{ fontFamily: 'inherit' }}>{renderFormattedText(msg.texto)}</p>
                     </div>
                   </div>
                 </div>
@@ -331,71 +562,160 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
         </div>
       </div>
 
-      {/* Roleplay bar */}
-      {roleplayMode && (
-        <div className="bg-navy-700 px-3 py-2 z-20 shrink-0">
-          {equippedPapeis.length === 0 ? (
-            <p className="text-white/40 text-sm text-center py-1">
-              Nenhum papel equipado. Abra o catálogo para equipar.
-            </p>
-          ) : (
-            <div className="flex gap-2 overflow-x-auto no-scrollbar">
+      {/* Bottom area */}
+      <div className="ml-2 mr-3 mb-2 z-20 shrink-0 flex flex-row items-center gap-5 max-w-full">
+        {/* Left element: standalone avatar button */}
+        {roleplayMode && equippedPapeis.length > 0 && (
+          <button
+            onClick={() => setIsMenuPapeisAberto((prev) => !prev)}
+            className="h-14 shrink-0 flex items-center px-3 py-1 bg-navy-700 rounded-3xl relative active:scale-95 transition"
+            title="Trocar papel"
+          >
+            {(() => {
+              const sorted = [...equippedPapeis].sort((a, b) => {
+                if (a.id === activePapel?.id) return -1;
+                if (b.id === activePapel?.id) return 1;
+                return 0;
+              });
+              const count = Math.min(sorted.length, 3);
+              return sorted.slice(0, 3).map((papel, i) => {
+                const overlapClass = i === 0 ? '' : 'ml-[-20px]';
+                const overlayClass = i === 0 ? '' : i === 1 ? 'avatar-overlay-50' : 'avatar-overlay-75';
+                return (
+                  <div
+                    key={papel.id}
+                    className={`w-12 h-12 rounded-full bg-navy-800 overflow-hidden shrink-0 relative ${overlayClass} ${overlapClass}`}
+                    style={{ zIndex: (count - i) * 10 }}
+                  >
+                    {papel.avatar_url ? (
+                      <img src={papel.avatar_url} alt={papel.nome} className="w-full h-full object-cover" />
+                    ) : (
+                      <div
+                        className="w-full h-full flex items-center justify-center text-sm font-bold"
+                        style={{ backgroundColor: papel.cor_balao, color: papel.cor_fonte }}
+                      >
+                        {papel.nome.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                  </div>
+                );
+              });
+            })()}
+            {equippedPapeis.length > 3 && (
+              <span className="absolute top-0 right-0 w-5 h-5 rounded-full bg-neon text-white text-[10px] font-bold flex items-center justify-center z-10">
+                +{equippedPapeis.length - 3}
+              </span>
+            )}
+          </button>
+        )}
+
+        {/* Right element: input capsule or menu */}
+        {isMenuPapeisAberto ? (
+          /* Selection sheet */
+          <div className="flex-1 bg-navy-700 rounded-3xl px-4 py-3 flex flex-col gap-2 min-w-0">
+            <span className="text-white/40 text-xs uppercase tracking-wider text-center">papeis abertos</span>
+            <div className="max-h-48 overflow-y-auto no-scrollbar flex flex-col gap-2">
               {equippedPapeis.map((papel) => (
                 <button
                   key={papel.id}
-                  onClick={() => setActivePapel(papel)}
-                  className={`flex flex-col items-center gap-1 shrink-0 transition ${
-                    activePapel?.id === papel.id ? 'scale-105' : 'opacity-70'
+                  onClick={() => {
+                    setActivePapel(papel);
+                    setIsMenuPapeisAberto(false);
+                  }}
+                  className={`relative z-10 flex flex-row items-center gap-3 shrink-0 rounded-full px-3 py-2 transition ${
+                    activePapel?.id === papel.id
+                      ? 'bg-neon/20 ring-1 ring-neon'
+                      : 'bg-navy-600 active:scale-95'
                   }`}
                 >
                   {papel.avatar_url ? (
-                    <img
-                      src={papel.avatar_url}
-                      alt={papel.nome}
-                      className="w-12 h-12 rounded-full object-cover border-2"
-                      style={{
-                        borderColor: activePapel?.id === papel.id ? papel.cor_balao : 'transparent',
-                      }}
-                    />
-                  ) : (
-                    <div
-                      className="w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold border-2"
-                      style={{
-                        backgroundColor: papel.cor_balao,
-                        color: papel.cor_fonte,
-                        borderColor: activePapel?.id === papel.id ? papel.cor_balao : 'transparent',
-                      }}
+                    <span
+                      onClick={(e) => { e.stopPropagation(); setSelectedProfileRole(papel); }}
+                      className="cursor-pointer"
                     >
-                      {papel.nome.charAt(0).toUpperCase()}
-                    </div>
+                      <img
+                        src={papel.avatar_url}
+                        alt={papel.nome}
+                        className="w-9 h-9 rounded-full object-cover shrink-0 border-2"
+                        style={{
+                          borderColor: activePapel?.id === papel.id ? papel.cor_balao : 'transparent',
+                        }}
+                      />
+                    </span>
+                  ) : (
+                    <span
+                      onClick={(e) => { e.stopPropagation(); setSelectedProfileRole(papel); }}
+                      className="cursor-pointer"
+                    >
+                      <div
+                        className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold border-2 shrink-0"
+                        style={{
+                          backgroundColor: papel.cor_balao,
+                          color: papel.cor_fonte,
+                          borderColor: activePapel?.id === papel.id ? papel.cor_balao : 'transparent',
+                        }}
+                      >
+                        {papel.nome.charAt(0).toUpperCase()}
+                      </div>
+                    </span>
                   )}
-                  <span className="text-xs text-white/60 max-w-[60px] truncate">{papel.nome}</span>
+                  <span className="text-sm text-white truncate flex-1">{papel.nome}</span>
+                  <span
+                    onClick={(e) => { e.stopPropagation(); setSelectedProfileRole(papel); }}
+                    className="cursor-pointer ml-1 shrink-0 p-1 rounded-full hover:bg-white/10 transition"
+                  >
+                    <Pencil size={14} className="text-white/40 hover:text-white/70" />
+                  </span>
                 </button>
               ))}
             </div>
-          )}
-        </div>
-      )}
-
-      {/* Input */}
-      <div className="px-4 py-3 bg-navy-700 z-20 shrink-0">
-        <div className="flex gap-2 items-end">
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSend())}
-            placeholder={roleplayMode && activePapel ? `Como ${activePapel.nome}...` : 'Mensagem...'}
-            className="input-pill flex-1"
-          />
-          <button
-            onClick={handleSend}
-            disabled={!input.trim() || sending}
-            className="w-12 h-12 rounded-full bg-neon flex items-center justify-center shrink-0 active:scale-90 transition disabled:opacity-40"
-          >
-            {sending ? <Loader2 size={20} className="animate-spin text-white" /> : <Send size={20} className="text-white" />}
-          </button>
-        </div>
+          </div>
+        ) : (
+          /* Standalone input capsule */
+          <div className="flex-1 flex flex-col gap-1 min-w-0">
+            {/* Shortcut bar */}
+            <div className="flex gap-1.5 px-1 overflow-x-auto no-scrollbar">
+              <button onClick={() => insertShortcut('— ')} className="shrink-0 px-2.5 py-1 text-[11px] rounded-full bg-navy-800 text-white/60 hover:text-white hover:bg-navy-600 active:scale-95 transition border border-white/5">
+                — Speech
+              </button>
+              <button onClick={() => insertShortcut('* ', '* ', ' *')} className="shrink-0 px-2.5 py-1 text-[11px] rounded-full bg-navy-800 text-white/60 hover:text-white hover:bg-navy-600 active:scale-95 transition border border-white/5">
+                * Action
+              </button>
+              <button onClick={() => insertShortcut('(())', '(( ', ' ))')} className="shrink-0 px-2.5 py-1 text-[11px] rounded-full bg-navy-800 text-white/60 hover:text-white hover:bg-navy-600 active:scale-95 transition border border-white/5">
+                (( Thought ))
+              </button>
+              <button onClick={() => insertShortcut('// ')} className="shrink-0 px-2.5 py-1 text-[11px] rounded-full bg-navy-800 text-white/60 hover:text-white hover:bg-navy-600 active:scale-95 transition border border-white/5">
+                // Off Topic
+              </button>
+              <button onClick={() => insertShortcut('> ')} className="shrink-0 px-2.5 py-1 text-[11px] rounded-full bg-navy-800 text-white/60 hover:text-white hover:bg-navy-600 active:scale-95 transition border border-white/5">
+                {'>'} Narrador
+              </button>
+            </div>
+            {/* Input */}
+            <div className="bg-navy-700 rounded-3xl px-3 py-2 flex gap-2 items-center">
+              <input
+                ref={inputRef}
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSend())}
+                placeholder={roleplayMode && activePapel ? `Como ${activePapel.nome}...` : 'Mensagem...'}
+                className="input-pill flex-1 min-w-0 pl-4"
+              />
+              <button
+                onClick={handleSend}
+                disabled={!input.trim() || sending}
+                className="w-11 h-11 rounded-full bg-neon flex items-center justify-center shrink-0 active:scale-90 transition disabled:opacity-40"
+              >
+                {sending ? (
+                  <Loader2 size={20} className="animate-spin text-white" />
+                ) : (
+                  <Send size={20} className="text-white" />
+                )}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Catalog Modal */}
@@ -403,7 +723,7 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
         <RoleplayCatalog
           papeis={papeis}
           onClose={() => setShowCatalog(false)}
-          onPapeisChanged={handlePapeisUpdated}
+          onRefresh={handlePapeisUpdated}
         />
       )}
 
@@ -414,6 +734,174 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
           config={config}
           onClose={() => setShowBgSettings(false)}
           onConfigUpdated={handleConfigUpdated}
+        />
+      )}
+
+      {/* Pinned Lore Panel */}
+      {isPinnedLoreOpen && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setIsPinnedLoreOpen(false)}>
+          <div
+            className="w-full sm:max-w-md bg-navy-700 rounded-t-[2rem] sm:rounded-[2rem] max-h-[85vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-white/5">
+              <h2 className="text-lg font-bold">Notas Fixas</h2>
+              <button onClick={() => setIsPinnedLoreOpen(false)} className="w-9 h-9 rounded-full bg-navy-600 flex items-center justify-center active:scale-90 transition">
+                <X size={18} className="text-white/60" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="flex-1 overflow-y-auto p-5">
+              {isLoadingNotes ? (
+                <div className="flex flex-col items-center justify-center py-10 text-center">
+                  <Loader2 size={24} className="animate-spin text-neon mb-4" />
+                  <p className="text-white/40">Carregando notas...</p>
+                </div>
+              ) : pinnedNotes.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-10 text-center">
+                  <MapPinned size={40} className="text-white/20 mb-4" />
+                  <p className="text-white/40">Nenhuma nota ainda</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {pinnedNotes.map((note) => (
+                    <div
+                      key={note.id}
+                      onClick={() => setSelectedNoteId(note.id)}
+                      className="bg-navy-800 rounded-2xl p-4 cursor-pointer hover:opacity-80 transition"
+                    >
+                      <p className="text-white">{note.title}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 border-t border-white/5">
+              <button
+                onClick={() => setIsAddNoteOpen(true)}
+                className="w-full h-12 rounded-3xl bg-neon text-white font-medium flex items-center justify-center gap-2 active:scale-95 transition"
+              >
+                + Adicionar nota
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Note Form */}
+      {isAddNoteOpen && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => { setIsAddNoteOpen(false); setNoteTitleInput(''); setNoteDescriptionInput(''); }}>
+          <div
+            className="w-full sm:max-w-md bg-navy-700 rounded-t-[2rem] sm:rounded-[2rem] max-h-[85vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-white/5">
+              <h2 className="text-lg font-bold">Adicionar nota</h2>
+              <button onClick={() => { setIsAddNoteOpen(false); setNoteTitleInput(''); setNoteDescriptionInput(''); }} className="w-9 h-9 rounded-full bg-navy-600 flex items-center justify-center active:scale-90 transition">
+                <X size={18} className="text-white/60" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="flex-1 overflow-y-auto p-5 space-y-5">
+              <div>
+                <label className="block text-white/50 text-sm mb-2">Título da nota</label>
+                <input
+                  type="text"
+                  value={noteTitleInput}
+                  onChange={(e) => setNoteTitleInput(e.target.value)}
+                  placeholder="Ex: Local da história"
+                  className="w-full px-4 py-3 rounded-xl bg-navy-600 text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-neon/50"
+                />
+                {noteTitleInput.trim() === '' && (
+                  <p className="text-red-400 text-sm mt-2">O título é obrigatório</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-white/50 text-sm mb-2">Descrição (opcional)</label>
+                <textarea
+                  value={noteDescriptionInput}
+                  onChange={(e) => setNoteDescriptionInput(e.target.value)}
+                  placeholder="Ex: A história se passa no castelo de gelo"
+                  rows={4}
+                  className="w-full px-4 py-3 rounded-xl bg-navy-600 text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-neon/50 resize-none"
+                />
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 border-t border-white/5">
+              <button
+                onClick={handleSaveNote}
+                className="w-full h-12 rounded-3xl bg-neon text-white font-medium flex items-center justify-center gap-2 active:scale-95 transition"
+              >
+                Salvar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Note Detail Modal */}
+      {selectedNoteId && (() => {
+        const selectedNote = pinnedNotes.find(note => note.id === selectedNoteId);
+        if (!selectedNote) return null;
+        return (
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setSelectedNoteId(null)}>
+            <div
+              className="w-full sm:max-w-md bg-navy-700 rounded-t-[2rem] sm:rounded-[2rem] max-h-[85vh] flex flex-col"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between px-5 py-4 border-b border-white/5">
+                <h2 className="text-lg font-bold truncate flex-1 mr-3">{selectedNote.title}</h2>
+                <button onClick={() => setSelectedNoteId(null)} className="w-9 h-9 rounded-full bg-navy-600 flex items-center justify-center active:scale-90 transition shrink-0">
+                  <X size={18} className="text-white/60" />
+                </button>
+              </div>
+
+              {/* Body */}
+              <div className="flex-1 overflow-y-auto p-5">
+                {selectedNote.description ? (
+                  <p className="text-white/70 leading-relaxed whitespace-pre-wrap break-words">{selectedNote.description}</p>
+                ) : (
+                  <p className="text-white/30 italic">Sem descrição</p>
+                )}
+              </div>
+
+              {/* Footer */}
+              <div className="p-4 border-t border-white/5 flex flex-col sm:flex-row gap-3">
+              <button
+                onClick={() => setSelectedNoteId(null)}
+                className="flex-1 h-12 rounded-3xl bg-navy-600 text-white/70 font-medium flex items-center justify-center gap-2 active:scale-95 transition"
+              >
+                Fechar
+              </button>
+              <button
+                onClick={handleDeleteNote}
+                className="flex-1 h-12 rounded-3xl bg-red-600 text-white font-medium flex items-center justify-center gap-2 active:scale-95 transition"
+              >
+                Deletar
+              </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Role Profile Modal */}
+      {selectedProfileRole && (
+        <RoleProfileModal
+          role={selectedProfileRole}
+          currentUserId={profile?.id || ""}
+          onClose={() => setSelectedProfileRole(null)}
+          onUpdated={loadPapeis}
         />
       )}
     </div>

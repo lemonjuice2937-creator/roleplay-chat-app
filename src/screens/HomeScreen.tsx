@@ -91,9 +91,9 @@ export default function HomeScreen({ onOpenChat }: { onOpenChat: (chatId: string
 
   async function startChat(partner: Usuario) {
     if (!profile) return;
-    const { data: chatId, error } = await supabase.rpc('find_or_create_chat', {
-      p_user1: profile.id,
-      p_user2: partner.id,
+    const { data: chatId, error } = await supabase.rpc('find_or_create_chat1', {
+      user1: profile.id,
+      user2: partner.id,
     });
 
     if (chatId && !error) {
