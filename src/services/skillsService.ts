@@ -1,11 +1,20 @@
 import { supabase } from '../lib/supabase';
 
+export interface SkillItem {
+  id: string;
+  user_id: string;
+  nome: string;
+  descricao: string | null;
+  role_id: string | null;
+  created_at?: string;
+}
+
 export async function saveSkillRecord(
   userId: string,
   nome: string,
   descricao?: string,
   roleId?: string
-): Promise<any> {
+): Promise<SkillItem> {
   const { data, error } = await supabase
     .from('skills')
     .insert({
@@ -21,7 +30,7 @@ export async function saveSkillRecord(
   return data;
 }
 
-export async function fetchSkills(roleId?: string): Promise<any[]> {
+export async function fetchSkills(roleId?: string): Promise<SkillItem[]> {
   let query = supabase
     .from('skills')
     .select('*');

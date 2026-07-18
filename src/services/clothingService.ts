@@ -1,5 +1,15 @@
 import { supabase } from '../lib/supabase';
 
+export interface VestuarioItem {
+  id: string;
+  user_id: string;
+  imagem_url: string;
+  nome: string | null;
+  descricao: string | null;
+  role_id: string | null;
+  created_at?: string;
+}
+
 export async function uploadClothingFile(file: File): Promise<string> {
   const ext = file.name.split('.').pop();
   const fileName = `${crypto.randomUUID()}.${ext}`;
@@ -21,7 +31,7 @@ export async function saveClothingRecord(
   nome?: string,
   descricao?: string,
   roleId?: string
-): Promise<any> {
+): Promise<VestuarioItem> {
   const { data, error } = await supabase
     .from('vestuario')
     .insert({
@@ -38,7 +48,7 @@ export async function saveClothingRecord(
   return data;
 }
 
-export async function fetchClothing(roleId?: string): Promise<any[]> {
+export async function fetchClothing(roleId?: string): Promise<VestuarioItem[]> {
   let query = supabase
     .from('vestuario')
     .select('*');

@@ -1,5 +1,15 @@
 import { supabase } from '../lib/supabase';
 
+export interface ReferenciaItem {
+  id: string;
+  user_id: string;
+  imagem_url: string;
+  nome: string | null;
+  descricao: string | null;
+  role_id: string | null;
+  created_at?: string;
+}
+
 export async function uploadReferenceFile(file: File): Promise<string> {
   const ext = file.name.split('.').pop();
   const fileName = `${crypto.randomUUID()}.${ext}`;
@@ -21,7 +31,7 @@ export async function saveReferenceRecord(
   nome?: string,
   descricao?: string,
   roleId?: string
-): Promise<any> {
+): Promise<ReferenciaItem> {
   const { data, error } = await supabase
     .from('referencias')
     .insert({
@@ -38,7 +48,7 @@ export async function saveReferenceRecord(
   return data;
 }
 
-export async function fetchReferences(roleId?: string): Promise<any[]> {
+export async function fetchReferences(roleId?: string): Promise<ReferenciaItem[]> {
   let query = supabase
     .from('referencias')
     .select('*');
