@@ -3,72 +3,14 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { X, User, BookOpen, Shirt, Sparkles, Pencil, Loader2, ChevronDown, ChevronUp } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-
-function hexToHsv(hex: string): { h: number; s: number; v: number } {
-  if (!hex || hex.length < 7) return { h: 0, s: 0, v: 100 };
-  const r = parseInt(hex.slice(1, 3), 16) / 255;
-  const g = parseInt(hex.slice(3, 5), 16) / 255;
-  const b = parseInt(hex.slice(5, 7), 16) / 255;
-  const max = Math.max(r, g, b);
-  const min = Math.min(r, g, b);
-  const diff = max - min;
-  let h = 0;
-  if (diff !== 0) {
-    if (max === r) h = ((g - b) / diff) * 60;
-    if (max === g) h = ((b - r) / diff) * 60 + 120;
-    if (max === b) h = ((r - g) / diff) * 60 + 240;
-    if (h < 0) h += 360;
-  }
-  const s = max === 0 ? 0 : (diff / max) * 100;
-  const v = max * 100;
-  return { h: Math.round(h), s: Math.round(s), v: Math.round(v) };
-}
-
-function hsvToHex(h: number, s: number, v: number): string {
-  s /= 100;
-  v /= 100;
-  const c = v * s;
-  const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
-  const m = v - c;
-  let r = 0, g = 0, b = 0;
-  if (h < 60) { r = c; g = x; }
-  else if (h < 120) { r = x; g = c; }
-  else if (h < 180) { g = c; b = x; }
-  else if (h < 240) { g = x; b = c; }
-  else if (h < 300) { r = x; b = c; }
-  else { r = c; b = x; }
-  const toHex = (n: number) => Math.round((n + m) * 255).toString(16).padStart(2, '0');
-  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
-}
-
-function getColorName(hex: string): string {
-  const hsv = hexToHsv(hex);
-  const { h, s, v } = hsv;
-  if (v < 10) return 'Preto';
-  if (s < 10 && v > 90) return 'Branco';
-  if (s < 10) return 'Cinza';
-  const names: [number, string][] = [
-    [0, 'Vermelho'], [15, 'Vermelho-alaranjado'], [30, 'Laranja'],
-    [45, 'Amarelo-alaranjado'], [60, 'Amarelo'], [75, 'Amarelo-esverdeado'],
-    [90, 'Verde-amarelo'], [120, 'Verde'], [150, 'Verde-azulado'],
-    [180, 'Ciano'], [210, 'Azul-piscina'], [240, 'Azul'],
-    [270, 'Azul-violeta'], [300, 'Violeta'], [330, 'Vermelho-rosa'],
-    [360, 'Vermelho'],
-  ];
-  let name = 'Vermelho';
-  for (const [hue, n] of names) {
-    if (h <= hue) { name = n; break; }
-  }
-  if (v < 50) name += ' escuro';
-  else if (v > 80 && s < 60) name += ' claro';
-  return name;
-}
+import { hexToHsv, hsvToHex, getColorName, isValidHex, GradientColorPicker } from './ColorPicker';
 
 import ReferencesView from './ReferencesView';
 import ClothingView from './ClothingView';
 import SkillsView from './SkillsView';
 import ImageCropperModal from './ImageCropperModal';
 import ConfirmModal from './ConfirmModal';
+import { autoBackupPapel } from '../services/personagensSalvosService';
 
 interface RoleProfileModalProps {
   role: any;
@@ -77,112 +19,6 @@ interface RoleProfileModalProps {
   onClose: () => void;
   onUpdated?: () => void;
   onDeleted?: () => void;
-}
-
-function GradientColorPicker({
-  color,
-  onChange,
-  hue,
-  onHueChange,
-}: {
-  color: string;
-  onChange: (hex: string) => void;
-  hue: number;
-  onHueChange: (h: number) => void;
-}) {
-  const hsv = hexToHsv(color);
-  const squareRef = useRef<HTMLDivElement>(null);
-  const hueRef = useRef<HTMLDivElement>(null);
-  const dragging = useRef<'square' | 'hue' | null>(null);
-
-  const handleSquareInteraction = useCallback((clientX: number, clientY: number) => {
-    const el = squareRef.current;
-    if (!el) return;
-    const rect = el.getBoundingClientRect();
-    const x = Math.max(0, Math.min(clientX - rect.left, rect.width));
-    const y = Math.max(0, Math.min(clientY - rect.top, rect.height));
-    const s = Math.round((x / rect.width) * 100);
-    const v = Math.round(100 - (y / rect.height) * 100);
-    onChange(hsvToHex(hue, s, v));
-  }, [hue, onChange]);
-
-  const handleHueInteraction = useCallback((clientY: number) => {
-    const el = hueRef.current;
-    if (!el) return;
-    const rect = el.getBoundingClientRect();
-    const y = Math.max(0, Math.min(clientY - rect.top, rect.height));
-    const h = Math.round((y / rect.height) * 360);
-    onHueChange(h);
-    onChange(hsvToHex(h, hsv.s, hsv.v));
-  }, [hsv.s, hsv.v, onHueChange, onChange]);
-
-  useEffect(() => {
-    const handleMove = (e: MouseEvent | TouchEvent) => {
-      if (!dragging.current) return;
-      e.preventDefault();
-      const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-      const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
-      if (dragging.current === 'square') handleSquareInteraction(clientX, clientY);
-      else if (dragging.current === 'hue') handleHueInteraction(clientY);
-    };
-    const handleUp = () => { dragging.current = null; };
-    window.addEventListener('mousemove', handleMove);
-    window.addEventListener('mouseup', handleUp);
-    window.addEventListener('touchmove', handleMove, { passive: false });
-    window.addEventListener('touchend', handleUp);
-    return () => {
-      window.removeEventListener('mousemove', handleMove);
-      window.removeEventListener('mouseup', handleUp);
-      window.removeEventListener('touchmove', handleMove);
-      window.removeEventListener('touchend', handleUp);
-    };
-  }, [handleSquareInteraction, handleHueInteraction]);
-
-  const satX = (hsv.s / 100) * 100;
-  const valY = ((100 - hsv.v) / 100) * 100;
-  const hueY = (hue / 360) * 100;
-
-  return (
-    <div className="flex gap-3 items-stretch" style={{ height: 180 }}>
-      <div
-        ref={squareRef}
-        className="relative flex-1 rounded-xl overflow-hidden cursor-crosshair"
-        style={{ background: `linear-gradient(to top, #fff, ${hsvToHex(hue, 100, 100)})` }}
-        onMouseDown={(e) => { dragging.current = 'square'; handleSquareInteraction(e.clientX, e.clientY); }}
-        onTouchStart={(e) => { dragging.current = 'square'; handleSquareInteraction(e.touches[0].clientX, e.touches[0].clientY); }}
-      >
-        <div className="absolute inset-0" style={{ background: 'linear-gradient(to right, #fff, transparent)' }} />
-        <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, transparent, #000)' }} />
-        <div
-          className="absolute w-4 h-4 rounded-full border-2 border-white shadow-lg -translate-x-1/2 -translate-y-1/2 pointer-events-none"
-          style={{
-            left: `${satX}%`,
-            top: `${valY}%`,
-            boxShadow: '0 0 0 1px rgba(0,0,0,0.3), 0 2px 8px rgba(0,0,0,0.4)',
-          }}
-        />
-      </div>
-      <div className="flex flex-col gap-2 items-center" style={{ width: 32 }}>
-        <div
-          ref={hueRef}
-          className="relative flex-1 w-full rounded-xl overflow-hidden cursor-pointer"
-          style={{
-            background: 'linear-gradient(to bottom, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000)',
-          }}
-          onMouseDown={(e) => { dragging.current = 'hue'; handleHueInteraction(e.clientY); }}
-          onTouchStart={(e) => { dragging.current = 'hue'; handleHueInteraction(e.touches[0].clientY); }}
-        >
-          <div
-            className="absolute left-1/2 -translate-x-1/2 -translate-y-1/2 w-5 h-5 rounded-full border-2 border-white pointer-events-none"
-            style={{
-              top: `${hueY}%`,
-              boxShadow: '0 0 0 1px rgba(0,0,0,0.3), 0 2px 6px rgba(0,0,0,0.3)',
-            }}
-          />
-        </div>
-      </div>
-    </div>
-  );
 }
 
 export default function RoleProfileModal({ role, currentUserId, chatId, onClose, onUpdated, onDeleted }: RoleProfileModalProps) {
@@ -277,6 +113,7 @@ export default function RoleProfileModal({ role, currentUserId, chatId, onClose,
 
       setAvatarUrl(publicUrl);
       onUpdated?.();
+      autoBackupPapel(role.id, currentUserId);
     } catch (err: any) {
       console.error('Erro ao upload avatar:', err);
       alert(err?.message || 'Erro ao enviar imagem.');
@@ -304,6 +141,7 @@ export default function RoleProfileModal({ role, currentUserId, chatId, onClose,
 
       if (error) throw error;
       onUpdated?.();
+      autoBackupPapel(role.id, currentUserId);
       onClose();
     } catch (err: any) {
       console.error('Erro ao salvar perfil:', err);
@@ -325,6 +163,7 @@ export default function RoleProfileModal({ role, currentUserId, chatId, onClose,
       if (error) throw error;
       setEquipped(false);
       onUpdated?.();
+      autoBackupPapel(role.id, currentUserId);
       onClose();
     } catch (err: any) {
       alert(err?.message || 'Erro ao deixar papel.');
@@ -340,6 +179,7 @@ export default function RoleProfileModal({ role, currentUserId, chatId, onClose,
       if (error) throw error;
       setEquipped(true);
       onUpdated?.();
+      autoBackupPapel(role.id, currentUserId);
       onClose();
     } catch (err: any) {
       alert(err?.message || 'Erro ao equipar papel.');
@@ -415,25 +255,33 @@ export default function RoleProfileModal({ role, currentUserId, chatId, onClose,
           />
 
           {canEdit ? (
-            <input
-              type="text"
-              value={nome}
-              onChange={(e) => setNome(e.target.value)}
-              className="w-full text-center text-xl font-bold text-white bg-navy-800 border border-purple-500/20 rounded-xl px-4 py-2 mb-2 focus:outline-none focus:border-purple-500/50 transition-colors"
-              placeholder="Nome do personagem"
-            />
+            <div className="w-full">
+              <input
+                type="text"
+                value={nome}
+                onChange={(e) => setNome(e.target.value)}
+                maxLength={20}
+                className="w-full text-center text-xl font-bold text-white bg-navy-800 border border-purple-500/20 rounded-xl px-4 py-2 mb-1 focus:outline-none focus:border-purple-500/50 transition-colors"
+                placeholder="Nome do personagem"
+              />
+              <span className="text-[10px] text-white/30 block mb-2">{nome.length}/20</span>
+            </div>
           ) : (
             <h3 className="text-xl font-bold text-white mb-2">{role.nome}</h3>
           )}
 
           {canEdit ? (
-            <textarea
-              value={descricao}
-              onChange={(e) => setDescricao(e.target.value)}
-              className="w-full text-center text-sm text-white/60 bg-navy-800 border border-purple-500/20 rounded-xl px-4 py-2 resize-none focus:outline-none focus:border-purple-500/50 transition-colors"
-              placeholder="Descrição (opcional)"
-              rows={3}
-            />
+            <div className="w-full">
+              <textarea
+                value={descricao}
+                onChange={(e) => setDescricao(e.target.value)}
+                maxLength={250}
+                className="w-full text-center text-sm text-white/60 bg-navy-800 border border-purple-500/20 rounded-xl px-4 py-2 resize-none focus:outline-none focus:border-purple-500/50 transition-colors"
+                placeholder="Descrição (opcional)"
+                rows={3}
+              />
+              <span className="text-[10px] text-white/30 block mt-1">{descricao.length}/250</span>
+            </div>
           ) : (
             <p className="text-sm text-white/60 text-center">
               {role.descricao || 'Sem descrição'}
@@ -597,15 +445,6 @@ export default function RoleProfileModal({ role, currentUserId, chatId, onClose,
           )}
 
           {canEdit && equipped && (
-            <button
-              onClick={() => setConfirmAction('leave')}
-              className="w-full py-4 bg-navy-800 hover:bg-navy-700 active:scale-95 transition-all duration-200 rounded-2xl font-medium text-white border border-purple-500/20"
-            >
-              Deixar papel
-            </button>
-          )}
-
-          {!canEdit && (
             <button
               onClick={() => setConfirmAction('leave')}
               className="w-full py-4 bg-navy-800 hover:bg-navy-700 active:scale-95 transition-all duration-200 rounded-2xl font-medium text-white border border-purple-500/20"

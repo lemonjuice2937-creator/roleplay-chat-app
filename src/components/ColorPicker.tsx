@@ -1,16 +1,6 @@
-import React, { useRef, useEffect, useState, useCallback } from 'react';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { useRef, useEffect, useCallback } from 'react';
 
-function hsvToHex(h: number, s: number, v: number): string {
-  s /= 100;
-  v /= 100;
-  const k = (n: number) => (n + h / 30) % 12;
-  const f = (n: number) => v * (1 - s * Math.max(0, Math.min(k(n) - 3, 9 - k(n), 1)));
-  const toHex = (x: number) => Math.round(255 * x).toString(16).padStart(2, '0');
-  return `#${toHex(f(5))}${toHex(f(3))}${toHex(f(1))}`;
-}
-
-function hexToHsv(hex: string): { h: number; s: number; v: number } {
+export function hexToHsv(hex: string): { h: number; s: number; v: number } {
   if (!hex || hex.length < 7) return { h: 0, s: 0, v: 100 };
   const r = parseInt(hex.slice(1, 3), 16) / 255;
   const g = parseInt(hex.slice(3, 5), 16) / 255;
@@ -30,146 +20,100 @@ function hexToHsv(hex: string): { h: number; s: number; v: number } {
   return { h: Math.round(h), s: Math.round(s), v: Math.round(v) };
 }
 
-interface ColorPickerProps {
-  hexColor: string;
-  onChange: (newHex: string) => void;
-  label: string;
+export function hsvToHex(h: number, s: number, v: number): string {
+  s /= 100;
+  v /= 100;
+  const c = v * s;
+  const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+  const m = v - c;
+  let r = 0, g = 0, b = 0;
+  if (h < 60) { r = c; g = x; }
+  else if (h < 120) { r = x; g = c; }
+  else if (h < 180) { g = c; b = x; }
+  else if (h < 240) { g = x; b = c; }
+  else if (h < 300) { r = x; b = c; }
+  else { r = c; b = x; }
+  const toHex = (n: number) => Math.round((n + m) * 255).toString(16).padStart(2, '0');
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
 }
 
-export default function ColorPicker({ hexColor, onChange, label }: ColorPickerProps) {
-  const [showPicker, setShowPicker] = useState(false);
-  const init = useRef(hexToHsv(hexColor));
-  const [h, setH] = useState(init.current.h);
-  const [s, setS] = useState(init.current.s);
-  const [v, setV] = useState(init.current.v);
+export function getColorName(hex: string): string {
+  const hsv = hexToHsv(hex);
+  const { h, s, v } = hsv;
+  if (v < 10) return 'Preto';
+  if (s < 10 && v > 90) return 'Branco';
+  if (s < 10) return 'Cinza';
+  const names: [number, string][] = [
+    [0, 'Vermelho'], [15, 'Vermelho-alaranjado'], [30, 'Laranja'],
+    [45, 'Amarelo-alaranjado'], [60, 'Amarelo'], [75, 'Amarelo-esverdeado'],
+    [90, 'Verde-amarelo'], [120, 'Verde'], [150, 'Verde-azulado'],
+    [180, 'Ciano'], [210, 'Azul-piscina'], [240, 'Azul'],
+    [270, 'Azul-violeta'], [300, 'Violeta'], [330, 'Vermelho-rosa'],
+    [360, 'Vermelho'],
+  ];
+  let name = 'Vermelho';
+  for (const [hue, n] of names) {
+    if (h <= hue) { name = n; break; }
+  }
+  if (v < 50) name += ' escuro';
+  else if (v > 80 && s < 60) name += ' claro';
+  return name;
+}
 
-  const hueCanvasRef = useRef<HTMLCanvasElement>(null);
-  const svCanvasRef = useRef<HTMLCanvasElement>(null);
-  const mouseDownRef = useRef(false);
-  const activeCanvasRef = useRef<'hue' | 'sv' | null>(null);
-  const isInteracting = useRef(false);
-  const onChangeRef = useRef(onChange);
-  onChangeRef.current = onChange;
-  const handleHueRef = useRef<(clientX: number) => void>(() => {});
-  const handleSvRef = useRef<(clientX: number, clientY: number) => void>(() => {});
+export function isValidHex(hex: string): boolean {
+  return /^#[0-9A-Fa-f]{6}$/.test(hex);
+}
 
-  useEffect(() => {
-    if (isInteracting.current) return;
-    const hsv = hexToHsv(hexColor);
-    setH(hsv.h);
-    setS(hsv.s);
-    setV(hsv.v);
-  }, [hexColor]);
+export function GradientColorPicker({
+  color,
+  onChange,
+  hue,
+  onHueChange,
+}: {
+  color: string;
+  onChange: (hex: string) => void;
+  hue: number;
+  onHueChange: (h: number) => void;
+}) {
+  const hsv = hexToHsv(color);
+  const squareRef = useRef<HTMLDivElement>(null);
+  const hueRef = useRef<HTMLDivElement>(null);
+  const dragging = useRef<'square' | 'hue' | null>(null);
 
-  useEffect(() => {
-    if (!showPicker) return;
-    const canvas = hueCanvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    const w = canvas.width;
-    const ht = canvas.height;
-
-    const grad = ctx.createLinearGradient(0, 0, w, 0);
-    grad.addColorStop(0, '#ff0000');
-    grad.addColorStop(1 / 6, '#ffff00');
-    grad.addColorStop(2 / 6, '#00ff00');
-    grad.addColorStop(3 / 6, '#00ffff');
-    grad.addColorStop(4 / 6, '#0000ff');
-    grad.addColorStop(5 / 6, '#ff00ff');
-    grad.addColorStop(1, '#ff0000');
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, w, ht);
-
-    const x = (h / 360) * w;
-    ctx.strokeStyle = '#fff';
-    ctx.lineWidth = 2;
-    ctx.shadowColor = '#000';
-    ctx.shadowBlur = 3;
-    ctx.beginPath();
-    ctx.moveTo(x, 0);
-    ctx.lineTo(x, ht);
-    ctx.stroke();
-    ctx.shadowBlur = 0;
-  }, [showPicker, h]);
-
-  useEffect(() => {
-    if (!showPicker) return;
-    const canvas = svCanvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    const w = canvas.width;
-    const ht = canvas.height;
-
-    ctx.fillStyle = hsvToHex(h, 100, 100);
-    ctx.fillRect(0, 0, w, ht);
-
-    const satGrad = ctx.createLinearGradient(0, 0, w, 0);
-    satGrad.addColorStop(0, '#fff');
-    satGrad.addColorStop(1, 'rgba(255,255,255,0)');
-    ctx.fillStyle = satGrad;
-    ctx.fillRect(0, 0, w, ht);
-
-    const valGrad = ctx.createLinearGradient(0, 0, 0, ht);
-    valGrad.addColorStop(0, 'rgba(0,0,0,0)');
-    valGrad.addColorStop(1, '#000');
-    ctx.fillStyle = valGrad;
-    ctx.fillRect(0, 0, w, ht);
-
-    const cx = (s / 100) * w;
-    const cy = ((100 - v) / 100) * ht;
-    ctx.strokeStyle = v > 50 ? '#000' : '#fff';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.arc(cx, cy, 5, 0, Math.PI * 2);
-    ctx.stroke();
-  }, [showPicker, h, s, v]);
-
-  const handleHueInteraction = useCallback((clientX: number) => {
-    const canvas = hueCanvasRef.current;
-    if (!canvas) return;
-    const rect = canvas.getBoundingClientRect();
-    const x = Math.max(0, Math.min(clientX - rect.left, rect.width));
-    const newH = Math.round((x / rect.width) * 360);
-    setH(newH);
-    onChangeRef.current(hsvToHex(newH, s, v));
-  }, [s, v]);
-
-  const handleSvInteraction = useCallback((clientX: number, clientY: number) => {
-    const canvas = svCanvasRef.current;
-    if (!canvas) return;
-    const rect = canvas.getBoundingClientRect();
+  const handleSquareInteraction = useCallback((clientX: number, clientY: number) => {
+    const el = squareRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
     const x = Math.max(0, Math.min(clientX - rect.left, rect.width));
     const y = Math.max(0, Math.min(clientY - rect.top, rect.height));
-    const newS = Math.round((x / rect.width) * 100);
-    const newV = Math.round(100 - (y / rect.height) * 100);
-    setS(newS);
-    setV(newV);
-    onChangeRef.current(hsvToHex(h, newS, newV));
-  }, [h]);
+    const s = Math.round((x / rect.width) * 100);
+    const v = Math.round(100 - (y / rect.height) * 100);
+    onChange(hsvToHex(hue, s, v));
+  }, [hue, onChange]);
 
-  useEffect(() => { handleHueRef.current = handleHueInteraction; }, [handleHueInteraction]);
-  useEffect(() => { handleSvRef.current = handleSvInteraction; }, [handleSvInteraction]);
+  const handleHueInteraction = useCallback((clientY: number) => {
+    const el = hueRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const y = Math.max(0, Math.min(clientY - rect.top, rect.height));
+    const h = Math.round((y / rect.height) * 360);
+    onHueChange(h);
+    onChange(hsvToHex(h, hsv.s, hsv.v));
+  }, [hsv.s, hsv.v, onHueChange, onChange]);
 
   useEffect(() => {
     const handleMove = (e: MouseEvent | TouchEvent) => {
-      if (!mouseDownRef.current || !activeCanvasRef.current) return;
+      if (!dragging.current) return;
+      e.preventDefault();
       const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
       const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
-      if (activeCanvasRef.current === 'hue') handleHueRef.current(clientX);
-      else handleSvRef.current(clientX, clientY);
+      if (dragging.current === 'square') handleSquareInteraction(clientX, clientY);
+      else if (dragging.current === 'hue') handleHueInteraction(clientY);
     };
-    const handleUp = () => {
-      mouseDownRef.current = false;
-      activeCanvasRef.current = null;
-      isInteracting.current = false;
-    };
+    const handleUp = () => { dragging.current = null; };
     window.addEventListener('mousemove', handleMove);
     window.addEventListener('mouseup', handleUp);
-    window.addEventListener('touchmove', handleMove);
+    window.addEventListener('touchmove', handleMove, { passive: false });
     window.addEventListener('touchend', handleUp);
     return () => {
       window.removeEventListener('mousemove', handleMove);
@@ -177,62 +121,51 @@ export default function ColorPicker({ hexColor, onChange, label }: ColorPickerPr
       window.removeEventListener('touchmove', handleMove);
       window.removeEventListener('touchend', handleUp);
     };
-  }, []);
+  }, [handleSquareInteraction, handleHueInteraction]);
 
-  const hex = hsvToHex(h, s, v);
+  const satX = (hsv.s / 100) * 100;
+  const valY = ((100 - hsv.v) / 100) * 100;
+  const hueY = (hue / 360) * 100;
 
   return (
-    <div className="mb-3">
-      <button
-        type="button"
-        onClick={() => setShowPicker(!showPicker)}
-        className="w-full flex justify-between items-center bg-navy-800 border border-white/10 rounded-xl px-4 py-3 text-white hover:border-white/20 transition"
+    <div className="flex gap-3 items-stretch" style={{ height: 180 }}>
+      <div
+        ref={squareRef}
+        className="relative flex-1 rounded-xl overflow-hidden cursor-crosshair"
+        style={{ background: `linear-gradient(to top, #fff, ${hsvToHex(hue, 100, 100)})` }}
+        onMouseDown={(e) => { dragging.current = 'square'; handleSquareInteraction(e.clientX, e.clientY); }}
+        onTouchStart={(e) => { dragging.current = 'square'; handleSquareInteraction(e.touches[0].clientX, e.touches[0].clientY); }}
       >
-        <span className="text-sm font-medium">{label}</span>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-white/40 font-mono">{hex.toUpperCase()}</span>
-          <div className="w-6 h-6 rounded-md border border-white/20 shadow-inner" style={{ backgroundColor: hex }} />
-          {showPicker ? <ChevronUp size={16} className="text-white/40" /> : <ChevronDown size={16} className="text-white/40" />}
-        </div>
-      </button>
-      {showPicker && (
-        <div className="mt-2 p-3 bg-navy-950/50 border border-white/5 rounded-xl space-y-3">
+        <div className="absolute inset-0" style={{ background: 'linear-gradient(to right, #fff, transparent)' }} />
+        <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, transparent, #000)' }} />
+        <div
+          className="absolute w-4 h-4 rounded-full border-2 border-white shadow-lg -translate-x-1/2 -translate-y-1/2 pointer-events-none"
+          style={{
+            left: `${satX}%`,
+            top: `${valY}%`,
+            boxShadow: '0 0 0 1px rgba(0,0,0,0.3), 0 2px 8px rgba(0,0,0,0.4)',
+          }}
+        />
+      </div>
+      <div className="flex flex-col gap-2 items-center" style={{ width: 32 }}>
+        <div
+          ref={hueRef}
+          className="relative flex-1 w-full rounded-xl overflow-hidden cursor-pointer"
+          style={{
+            background: 'linear-gradient(to bottom, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000)',
+          }}
+          onMouseDown={(e) => { dragging.current = 'hue'; handleHueInteraction(e.clientY); }}
+          onTouchStart={(e) => { dragging.current = 'hue'; handleHueInteraction(e.touches[0].clientY); }}
+        >
           <div
-            className="relative h-40 rounded-lg overflow-hidden cursor-crosshair"
-            onMouseDown={(e) => {
-              mouseDownRef.current = true;
-              activeCanvasRef.current = 'sv';
-              isInteracting.current = true;
-              handleSvInteraction(e.clientX, e.clientY);
+            className="absolute left-1/2 -translate-x-1/2 -translate-y-1/2 w-5 h-5 rounded-full border-2 border-white pointer-events-none"
+            style={{
+              top: `${hueY}%`,
+              boxShadow: '0 0 0 1px rgba(0,0,0,0.3), 0 2px 6px rgba(0,0,0,0.3)',
             }}
-            onTouchStart={(e) => {
-              mouseDownRef.current = true;
-              activeCanvasRef.current = 'sv';
-              isInteracting.current = true;
-              handleSvInteraction(e.touches[0].clientX, e.touches[0].clientY);
-            }}
-          >
-            <canvas ref={svCanvasRef} className="w-full h-full" width={300} height={160} />
-          </div>
-          <div
-            className="relative h-6 rounded-lg overflow-hidden cursor-crosshair"
-            onMouseDown={(e) => {
-              mouseDownRef.current = true;
-              activeCanvasRef.current = 'hue';
-              isInteracting.current = true;
-              handleHueInteraction(e.clientX);
-            }}
-            onTouchStart={(e) => {
-              mouseDownRef.current = true;
-              activeCanvasRef.current = 'hue';
-              isInteracting.current = true;
-              handleHueInteraction(e.touches[0].clientX);
-            }}
-          >
-            <canvas ref={hueCanvasRef} className="w-full h-full" width={300} height={24} />
-          </div>
+          />
         </div>
-      )}
+      </div>
     </div>
   );
 }

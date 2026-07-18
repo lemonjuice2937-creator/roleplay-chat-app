@@ -8,6 +8,7 @@ import RoleProfileModal from '../components/RoleProfileModal';
 import CatalogoDePapeis from '../components/CatalogoDePapeis';
 import PapeisEquipados from '../components/PapeisEquipados';
 import ConfirmModal from '../components/ConfirmModal';
+import BastidoresView from '../components/BastidoresView';
 
 export default function ChatScreen({ chatId, partner, onBack }: { chatId: string; partner: Usuario; onBack: () => void }) {
   const { profile } = useAuth();
@@ -18,9 +19,10 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
   const [papeis, setPapeis] = useState<Papel[]>([]);
   const [partnerPapeis, setPartnerPapeis] = useState<Papel[]>([]);
   const [equippedPapeis, setEquippedPapeis] = useState<Papel[]>([]);
-  const [roleplayMode, setRoleplayMode] = useState(false);
+  const [roleplayMode, setRoleplayMode] = useState(() => {
+    return localStorage.getItem(`roleplay_${chatId}`) === 'true';
+  });
   const [activePapel, setActivePapel] = useState<Papel | null>(null);
-  // showCatalog removed — CatalogoDePapeis manages its own visibility internally
   const [showBgSettings, setShowBgSettings] = useState(false);
   const [config, setConfig] = useState<ConfigChat | null>(null);
   const [pinnedNotes, setPinnedNotes] = useState<{id: string, title: string, description: string}[]>([]);
@@ -34,6 +36,7 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
   const [showCatalog, setShowCatalog] = useState(false);
   const [showPapeisEquipados, setShowPapeisEquipados] = useState(false);
   const [confirmDeleteNote, setConfirmDeleteNote] = useState(false);
+  const [showBastidores, setShowBastidores] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -364,6 +367,7 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
   function toggleRoleplay() {
     setRoleplayMode((prev) => {
       const next = !prev;
+      localStorage.setItem(`roleplay_${chatId}`, String(next));
       if (!next) {
         setActivePapel(null);
         setShowCatalog(false);
@@ -437,11 +441,13 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
 
           {/* Catalog button */}
           <button
-            onClick={() => setShowCatalog(true)}
-            className="w-10 h-10 rounded-full bg-navy-600 flex items-center justify-center active:scale-90 transition"
+            onClick={() => setShowCatalog(prev => !prev)}
+            className={`w-10 h-10 rounded-full flex items-center justify-center active:scale-90 transition ${
+              showCatalog ? 'bg-neon text-white' : 'bg-navy-600 text-white/50'
+            }`}
             title="Catálogo de Papéis"
           >
-            <Users size={18} className="text-white/70" />
+            <Users size={18} />
           </button>
 
           {/* Roleplay toggle */}
@@ -465,8 +471,19 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
         </button>
       </header>
 
+      {/* Catálogo de Papéis — inline below header */}
+      {showCatalog && (
+        <CatalogoDePapeis
+          partnerId={partner.id}
+          chatId={chatId}
+          onPapeisChanged={handlePapeisUpdated}
+          onClose={() => setShowCatalog(false)}
+          onOpenBastidores={() => { setShowCatalog(false); setShowBastidores(true); }}
+        />
+      )}
+
       {/* Messages area */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto relative">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto relative" onClick={() => { if (showCatalog) setShowCatalog(false); }}>
         {/* Background layer (z-0) */}
         {bgUrl && (
           <div className="fixed inset-0 z-0">
@@ -636,16 +653,6 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
             </div>
           </div>
       </div>
-
-      {/* Catálogo de Papéis — full-screen catalog via header button */}
-      {showCatalog && (
-        <CatalogoDePapeis
-          partnerId={partner.id}
-          chatId={chatId}
-          onPapeisChanged={handlePapeisUpdated}
-          onClose={() => setShowCatalog(false)}
-        />
-      )}
 
       {/* Papeis Equipados — bottom panel via glowing orb */}
       {showPapeisEquipados && (
@@ -845,6 +852,14 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
           confirmText="Deletar"
           onConfirm={() => { handleDeleteNote(); setConfirmDeleteNote(false); }}
           onCancel={() => setConfirmDeleteNote(false)}
+        />
+      )}
+
+      {/* Bastidores View */}
+      {showBastidores && (
+        <BastidoresView
+          onBack={() => setShowBastidores(false)}
+          onImported={() => { loadPapeis(); }}
         />
       )}
     </div>
