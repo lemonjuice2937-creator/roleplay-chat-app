@@ -13,11 +13,11 @@ import {
 interface ReferencesViewProps {
   roleId: string;
   userId: string;
-  isOwner: boolean;
+  canEdit: boolean;
   onBack: () => void;
 }
 
-export default function ReferencesView({ roleId, userId, isOwner, onBack }: ReferencesViewProps) {
+export default function ReferencesView({ roleId, userId, canEdit, onBack }: ReferencesViewProps) {
   const [references, setReferences] = useState<any[]>([]);
   const [nome, setNome] = useState('');
   const [descricao, setDescricao] = useState('');
@@ -114,7 +114,7 @@ export default function ReferencesView({ roleId, userId, isOwner, onBack }: Refe
           <div className="w-10" />
         </div>
 
-        {isOwner && (
+        {canEdit && (
           <div className="bg-navy-800 rounded-2xl p-4 mb-6 border border-purple-500/20">
             <input
               type="text"
@@ -191,7 +191,7 @@ export default function ReferencesView({ roleId, userId, isOwner, onBack }: Refe
                 {ref.descricao && (
                   <p className="text-white/50 text-xs truncate mt-1">{ref.descricao}</p>
                 )}
-                {isOwner && (
+                {canEdit && (
                   <button
                     onClick={() => setDeleteTarget({ id: ref.id, filePath: extractFilePath(ref.imagem_url), nome: ref.nome })}
                     className="mt-2 w-full py-1.5 bg-red-500/10 hover:bg-red-500/20 active:scale-95 transition-all duration-200 rounded-xl text-red-400 text-xs flex items-center justify-center gap-1"

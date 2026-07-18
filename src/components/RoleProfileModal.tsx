@@ -73,6 +73,7 @@ import ConfirmModal from './ConfirmModal';
 interface RoleProfileModalProps {
   role: any;
   currentUserId: string;
+  chatId?: string;
   onClose: () => void;
   onUpdated?: () => void;
   onDeleted?: () => void;
@@ -184,8 +185,9 @@ function GradientColorPicker({
   );
 }
 
-export default function RoleProfileModal({ role, currentUserId, onClose, onUpdated, onDeleted }: RoleProfileModalProps) {
+export default function RoleProfileModal({ role, currentUserId, chatId, onClose, onUpdated, onDeleted }: RoleProfileModalProps) {
   const isOwner = role.user_id === currentUserId;
+  const canEdit = isOwner || !!chatId;
 
   const [nome, setNome] = useState(role.nome ?? '');
   const [descricao, setDescricao] = useState(role.descricao ?? '');
@@ -372,7 +374,7 @@ export default function RoleProfileModal({ role, currentUserId, onClose, onUpdat
         </div>
 
         <div className="flex flex-col items-center mb-8">
-          {isOwner ? (
+          {canEdit ? (
             <div
               className="relative w-24 h-24 rounded-full bg-navy-800 border-2 border-purple-500/30 flex items-center justify-center overflow-hidden mb-4 cursor-pointer group"
               onMouseEnter={() => setIsAvatarHovered(true)}
@@ -412,7 +414,7 @@ export default function RoleProfileModal({ role, currentUserId, onClose, onUpdat
             className="hidden"
           />
 
-          {isOwner ? (
+          {canEdit ? (
             <input
               type="text"
               value={nome}
@@ -424,7 +426,7 @@ export default function RoleProfileModal({ role, currentUserId, onClose, onUpdat
             <h3 className="text-xl font-bold text-white mb-2">{role.nome}</h3>
           )}
 
-          {isOwner ? (
+          {canEdit ? (
             <textarea
               value={descricao}
               onChange={(e) => setDescricao(e.target.value)}
@@ -439,7 +441,7 @@ export default function RoleProfileModal({ role, currentUserId, onClose, onUpdat
           )}
         </div>
 
-        {isOwner && (
+        {canEdit && (
           <>
             {/* Bubble Color Picker */}
             <div className="mb-3">
@@ -575,7 +577,7 @@ export default function RoleProfileModal({ role, currentUserId, onClose, onUpdat
         </div>
 
         <div className="space-y-3 mb-6">
-          {isOwner && (
+          {canEdit && (
             <button
               onClick={handleSave}
               disabled={!nome.trim() || saving}
@@ -585,7 +587,7 @@ export default function RoleProfileModal({ role, currentUserId, onClose, onUpdat
             </button>
           )}
 
-          {isOwner && !equipped && (
+          {canEdit && !equipped && (
             <button
               onClick={handleEquip}
               className="w-full py-4 bg-neon/20 hover:bg-neon/30 active:scale-95 transition-all duration-200 rounded-2xl font-medium text-neon border border-neon/30"
@@ -594,7 +596,7 @@ export default function RoleProfileModal({ role, currentUserId, onClose, onUpdat
             </button>
           )}
 
-          {isOwner && equipped && (
+          {canEdit && equipped && (
             <button
               onClick={() => setConfirmAction('leave')}
               className="w-full py-4 bg-navy-800 hover:bg-navy-700 active:scale-95 transition-all duration-200 rounded-2xl font-medium text-white border border-purple-500/20"
@@ -603,7 +605,7 @@ export default function RoleProfileModal({ role, currentUserId, onClose, onUpdat
             </button>
           )}
 
-          {!isOwner && (
+          {!canEdit && (
             <button
               onClick={() => setConfirmAction('leave')}
               className="w-full py-4 bg-navy-800 hover:bg-navy-700 active:scale-95 transition-all duration-200 rounded-2xl font-medium text-white border border-purple-500/20"
@@ -626,7 +628,7 @@ export default function RoleProfileModal({ role, currentUserId, onClose, onUpdat
           <ReferencesView
             roleId={role.id}
             userId={role.user_id}
-            isOwner={isOwner}
+            canEdit={canEdit}
             onBack={() => setActiveSubView(null)}
           />
         )}
@@ -635,7 +637,7 @@ export default function RoleProfileModal({ role, currentUserId, onClose, onUpdat
           <ClothingView
             roleId={role.id}
             userId={role.user_id}
-            isOwner={isOwner}
+            canEdit={canEdit}
             onBack={() => setActiveSubView(null)}
           />
         )}
@@ -644,7 +646,7 @@ export default function RoleProfileModal({ role, currentUserId, onClose, onUpdat
           <SkillsView
             roleId={role.id}
             userId={role.user_id}
-            isOwner={isOwner}
+            canEdit={canEdit}
             onBack={() => setActiveSubView(null)}
           />
         )}
@@ -661,6 +663,7 @@ export default function RoleProfileModal({ role, currentUserId, onClose, onUpdat
       {confirmAction === 'leave' && (
         <ConfirmModal
           message={`Você tem certeza de que quer deixar ${role.nome}?`}
+          confirmText="Deixar"
           onConfirm={() => { handleUnequip(); setConfirmAction(null); }}
           onCancel={() => setConfirmAction(null)}
         />

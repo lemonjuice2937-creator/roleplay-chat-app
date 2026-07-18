@@ -7,6 +7,7 @@ import BackgroundSettings from './BackgroundSettings';
 import RoleProfileModal from '../components/RoleProfileModal';
 import CatalogoDePapeis from '../components/CatalogoDePapeis';
 import PapeisEquipados from '../components/PapeisEquipados';
+import ConfirmModal from '../components/ConfirmModal';
 
 export default function ChatScreen({ chatId, partner, onBack }: { chatId: string; partner: Usuario; onBack: () => void }) {
   const { profile } = useAuth();
@@ -32,6 +33,7 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
   const [selectedProfileRole, setSelectedProfileRole] = useState<any | null>(null);
   const [showCatalog, setShowCatalog] = useState(false);
   const [showPapeisEquipados, setShowPapeisEquipados] = useState(false);
+  const [confirmDeleteNote, setConfirmDeleteNote] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -121,7 +123,6 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
 
     if (data) {
       setPapeis(data as Papel[]);
-      setEquippedPapeis((data as Papel[]).filter((p) => p.equipado));
     }
 
     // Load partner's papeis
@@ -133,6 +134,11 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
     if (partnerData) {
       setPartnerPapeis(partnerData as Papel[]);
     }
+
+    // Combine equipped from both users
+    const ownEquipped = (data as Papel[] || []).filter((p) => p.equipado);
+    const partnerEquipped = (partnerData as Papel[] || []).filter((p) => p.equipado);
+    setEquippedPapeis([...ownEquipped, ...partnerEquipped]);
   }, [profile, partner.id]);
 
   // Load config
@@ -634,6 +640,8 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
       {/* Catálogo de Papéis — full-screen catalog via header button */}
       {showCatalog && (
         <CatalogoDePapeis
+          partnerId={partner.id}
+          chatId={chatId}
           onPapeisChanged={handlePapeisUpdated}
           onClose={() => setShowCatalog(false)}
         />
@@ -807,7 +815,7 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
                 Fechar
               </button>
               <button
-                onClick={handleDeleteNote}
+                onClick={() => setConfirmDeleteNote(true)}
                 className="flex-1 h-12 rounded-3xl bg-red-600 text-white font-medium flex items-center justify-center gap-2 active:scale-95 transition"
               >
                 Deletar
@@ -823,9 +831,20 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
         <RoleProfileModal
           role={selectedProfileRole}
           currentUserId={profile?.id || ""}
+          chatId={chatId}
           onClose={() => setSelectedProfileRole(null)}
           onUpdated={loadPapeis}
           onDeleted={loadPapeis}
+        />
+      )}
+
+      {/* Confirm Delete Note */}
+      {confirmDeleteNote && (
+        <ConfirmModal
+          message="Você tem certeza de que quer deletar esta nota?"
+          confirmText="Deletar"
+          onConfirm={() => { handleDeleteNote(); setConfirmDeleteNote(false); }}
+          onCancel={() => setConfirmDeleteNote(false)}
         />
       )}
     </div>

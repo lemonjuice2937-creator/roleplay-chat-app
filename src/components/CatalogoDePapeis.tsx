@@ -7,16 +7,21 @@ import RoleplayCatalog from '../screens/RoleplayCatalog';
 import RoleProfileModal from './RoleProfileModal';
 
 interface CatalogoDePapeisProps {
+  partnerId?: string;
+  chatId?: string;
   onPapeisChanged?: () => void;
   onClose: () => void;
 }
 
 export default function CatalogoDePapeis({
+  partnerId,
+  chatId,
   onPapeisChanged,
   onClose,
 }: CatalogoDePapeisProps) {
   const { profile } = useAuth();
   const [papeis, setPapeis] = useState<Papel[]>([]);
+  const [partnerPapeis, setPartnerPapeis] = useState<Papel[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [expanded, setExpanded] = useState(false);
@@ -25,6 +30,7 @@ export default function CatalogoDePapeis({
   const loadPapeis = useCallback(async () => {
     if (!profile) return;
     setLoading(true);
+
     const { data, error } = await supabase
       .from('papeis')
       .select('*')
@@ -34,8 +40,21 @@ export default function CatalogoDePapeis({
     if (!error && data) {
       setPapeis(data as Papel[]);
     }
+
+    if (partnerId) {
+      const { data: partnerData } = await supabase
+        .from('papeis')
+        .select('*')
+        .eq('user_id', partnerId)
+        .order('created_at', { ascending: false });
+
+      if (partnerData) {
+        setPartnerPapeis(partnerData as Papel[]);
+      }
+    }
+
     setLoading(false);
-  }, [profile]);
+  }, [profile, partnerId]);
 
   useEffect(() => {
     loadPapeis();
@@ -48,6 +67,7 @@ export default function CatalogoDePapeis({
   }
 
   const visiblePapeis = expanded ? papeis : papeis.slice(0, 8);
+  const visiblePartnerPapeis = expanded ? partnerPapeis : partnerPapeis.slice(0, 8);
 
   return (
     <>
@@ -84,7 +104,7 @@ export default function CatalogoDePapeis({
             <div className="flex items-center justify-center py-12">
               <Loader2 size={24} className="animate-spin text-purple-400" />
             </div>
-          ) : papeis.length === 0 ? (
+          ) : papeis.length === 0 && partnerPapeis.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center gap-3">
               <div className="w-16 h-16 rounded-full bg-navy-800 flex items-center justify-center border-2 border-dashed border-white/15">
                 <Plus size={28} className="text-white/25" />
@@ -100,68 +120,124 @@ export default function CatalogoDePapeis({
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-4 gap-4">
-              {/* + button as first item */}
-              <button
-                onClick={() => setShowCreateModal(true)}
-                className="flex flex-col items-center gap-1.5 group"
-              >
-                <div className="w-14 h-14 rounded-full bg-navy-800 border-2 border-dashed border-purple-500/40
-                                flex items-center justify-center
-                                group-hover:border-purple-400 group-hover:bg-navy-700
-                                active:scale-95 transition-all duration-200">
-                  <Plus size={20} className="text-purple-400/60 group-hover:text-purple-400" />
-                </div>
-                <span className="text-[11px] text-white/40 group-hover:text-white/60">Novo</span>
-              </button>
+            <div className="space-y-5">
+              {/* Own roles */}
+              <div>
+                <h3 className="text-[11px] font-semibold text-white/40 uppercase tracking-wider mb-2">Seus papéis</h3>
+                <div className="grid grid-cols-4 gap-4">
+                  {/* + button as first item */}
+                  <button
+                    onClick={() => setShowCreateModal(true)}
+                    className="flex flex-col items-center gap-1.5 group"
+                  >
+                    <div className="w-14 h-14 rounded-full bg-navy-800 border-2 border-dashed border-purple-500/40
+                                    flex items-center justify-center
+                                    group-hover:border-purple-400 group-hover:bg-navy-700
+                                    active:scale-95 transition-all duration-200">
+                      <Plus size={20} className="text-purple-400/60 group-hover:text-purple-400" />
+                    </div>
+                    <span className="text-[11px] text-white/40 group-hover:text-white/60">Novo</span>
+                  </button>
 
-              {visiblePapeis.map((papel) => (
-                  <div key={papel.id} className="flex flex-col items-center gap-1.5">
-                    <div className="relative group">
-                      <button
-                        onClick={() => setEditingRole(papel)}
-                        className="block"
-                      >
-                        <div
-                          className="w-14 h-14 rounded-full overflow-hidden shrink-0
-                                     border-[3px] transition-all duration-200
-                                     group-active:scale-90 hover:scale-105"
-                          style={{
-                            borderColor: papel.cor_balao,
-                            boxShadow: `0 2px 6px ${papel.cor_balao}30`,
-                          }}
+                  {visiblePapeis.map((papel) => (
+                    <div key={papel.id} className="flex flex-col items-center gap-1.5">
+                      <div className="relative group">
+                        <button
+                          onClick={() => setEditingRole(papel)}
+                          className="block"
                         >
-                          {papel.avatar_url ? (
-                            <img
-                              src={papel.avatar_url}
-                              alt={papel.nome}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
+                          <div
+                            className="w-14 h-14 rounded-full overflow-hidden shrink-0
+                                       border-[3px] transition-all duration-200
+                                       group-active:scale-90 hover:scale-105"
+                            style={{
+                              borderColor: papel.cor_balao,
+                              boxShadow: `0 2px 6px ${papel.cor_balao}30`,
+                            }}
+                          >
+                            {papel.avatar_url ? (
+                              <img
+                                src={papel.avatar_url}
+                                alt={papel.nome}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div
+                                className="w-full h-full flex items-center justify-center text-base font-bold"
+                                style={{
+                                  backgroundColor: papel.cor_balao,
+                                  color: papel.cor_fonte,
+                                }}
+                              >
+                                {papel.nome.charAt(0).toUpperCase()}
+                              </div>
+                            )}
+                          </div>
+                        </button>
+                      </div>
+                      <span className="text-[11px] font-medium text-white truncate w-full text-center leading-tight">
+                        {papel.nome}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Partner roles */}
+              {partnerPapeis.length > 0 && (
+                <div>
+                  <h3 className="text-[11px] font-semibold text-purple-400/60 uppercase tracking-wider mb-2">Papéis do parceiro</h3>
+                  <div className="grid grid-cols-4 gap-4">
+                    {visiblePartnerPapeis.map((papel) => (
+                      <div key={papel.id} className="flex flex-col items-center gap-1.5">
+                        <div className="relative group">
+                          <button
+                            onClick={() => setEditingRole(papel)}
+                            className="block"
+                          >
                             <div
-                              className="w-full h-full flex items-center justify-center text-base font-bold"
+                              className="w-14 h-14 rounded-full overflow-hidden shrink-0
+                                         border-[3px] border-dashed transition-all duration-200
+                                         group-active:scale-90 hover:scale-105"
                               style={{
-                                backgroundColor: papel.cor_balao,
-                                color: papel.cor_fonte,
+                                borderColor: papel.cor_balao,
+                                boxShadow: `0 2px 6px ${papel.cor_balao}30`,
                               }}
                             >
-                              {papel.nome.charAt(0).toUpperCase()}
+                              {papel.avatar_url ? (
+                                <img
+                                  src={papel.avatar_url}
+                                  alt={papel.nome}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <div
+                                  className="w-full h-full flex items-center justify-center text-base font-bold"
+                                  style={{
+                                    backgroundColor: papel.cor_balao,
+                                    color: papel.cor_fonte,
+                                  }}
+                                >
+                                  {papel.nome.charAt(0).toUpperCase()}
+                                </div>
+                              )}
                             </div>
-                          )}
+                          </button>
                         </div>
-                      </button>
-                    </div>
-                    <span className="text-[11px] font-medium text-white truncate w-full text-center leading-tight">
-                      {papel.nome}
-                    </span>
+                        <span className="text-[11px] font-medium text-white truncate w-full text-center leading-tight">
+                          {papel.nome}
+                        </span>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                </div>
+              )}
             </div>
           )}
         </div>
 
         {/* Bottom bar: expand chevron */}
-        {papeis.length > 8 && (
+        {(papeis.length > 8 || partnerPapeis.length > 8) && (
           <div className="shrink-0 flex justify-center pb-3 pt-1">
             <button
               onClick={() => setExpanded((prev) => !prev)}
@@ -192,6 +268,7 @@ export default function CatalogoDePapeis({
         <RoleProfileModal
           role={editingRole}
           currentUserId={profile?.id || ""}
+          chatId={chatId}
           onClose={() => setEditingRole(null)}
           onUpdated={() => { setEditingRole(null); loadPapeis(); onPapeisChanged?.(); }}
           onDeleted={() => { setEditingRole(null); loadPapeis(); onPapeisChanged?.(); }}

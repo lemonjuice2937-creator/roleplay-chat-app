@@ -12,11 +12,11 @@ import {
 interface SkillsViewProps {
   roleId: string;
   userId: string;
-  isOwner: boolean;
+  canEdit: boolean;
   onBack: () => void;
 }
 
-export default function SkillsView({ roleId, userId, isOwner, onBack }: SkillsViewProps) {
+export default function SkillsView({ roleId, userId, canEdit, onBack }: SkillsViewProps) {
   const [skills, setSkills] = useState<any[]>([]);
   const [nome, setNome] = useState('');
   const [descricao, setDescricao] = useState('');
@@ -78,7 +78,7 @@ export default function SkillsView({ roleId, userId, isOwner, onBack }: SkillsVi
           <div className="w-10" />
         </div>
 
-        {isOwner && (
+        {canEdit && (
           <div className="bg-navy-800 rounded-2xl p-4 mb-6 border border-purple-500/20">
             <input
               type="text"
@@ -127,7 +127,7 @@ export default function SkillsView({ roleId, userId, isOwner, onBack }: SkillsVi
                     <p className="text-white/50 text-sm leading-relaxed">{skill.descricao}</p>
                   )}
                 </div>
-                {isOwner && (
+                {canEdit && (
                   <button
                     onClick={() => setDeleteTarget({ id: skill.id, nome: skill.nome })}
                     className="shrink-0 w-8 h-8 bg-red-500/10 hover:bg-red-500/20 active:scale-90 transition-all duration-200 rounded-xl flex items-center justify-center"
