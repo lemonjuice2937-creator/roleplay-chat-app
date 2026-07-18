@@ -7,6 +7,7 @@ import {
   fetchSkills,
   saveSkillRecord,
   deleteSkill,
+  type SkillItem,
 } from '../services/skillsService';
 
 interface SkillsViewProps {
@@ -17,7 +18,7 @@ interface SkillsViewProps {
 }
 
 export default function SkillsView({ roleId, userId, canEdit, onBack }: SkillsViewProps) {
-  const [skills, setSkills] = useState<any[]>([]);
+  const [skills, setSkills] = useState<SkillItem[]>([]);
   const [nome, setNome] = useState('');
   const [descricao, setDescricao] = useState('');
   const [loading, setLoading] = useState(false);
@@ -47,9 +48,9 @@ export default function SkillsView({ roleId, userId, canEdit, onBack }: SkillsVi
       setNome('');
       setDescricao('');
       await loadSkills();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Erro ao salvar habilidade:', err);
-      setError(err?.message || 'Erro ao salvar. Tente novamente.');
+      setError((err as Error)?.message || 'Erro ao salvar. Tente novamente.');
     } finally {
       setLoading(false);
     }

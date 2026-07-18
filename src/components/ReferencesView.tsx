@@ -8,6 +8,7 @@ import {
   uploadReferenceFile,
   saveReferenceRecord,
   deleteReference,
+  type ReferenciaItem,
 } from '../services/referencesService';
 
 interface ReferencesViewProps {
@@ -18,7 +19,7 @@ interface ReferencesViewProps {
 }
 
 export default function ReferencesView({ roleId, userId, canEdit, onBack }: ReferencesViewProps) {
-  const [references, setReferences] = useState<any[]>([]);
+  const [references, setReferences] = useState<ReferenciaItem[]>([]);
   const [nome, setNome] = useState('');
   const [descricao, setDescricao] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -75,9 +76,9 @@ export default function ReferencesView({ roleId, userId, canEdit, onBack }: Refe
       setSelectedFile(null);
       setPreviewUrl(null);
       await loadReferences();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Erro ao salvar referência:', err);
-      setError(err?.message || 'Erro ao salvar. Tente novamente.');
+      setError((err as Error)?.message || 'Erro ao salvar. Tente novamente.');
     } finally {
       setLoading(false);
     }

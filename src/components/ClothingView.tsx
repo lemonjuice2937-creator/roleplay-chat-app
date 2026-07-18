@@ -8,6 +8,7 @@ import {
   uploadClothingFile,
   saveClothingRecord,
   deleteClothing,
+  type VestuarioItem,
 } from '../services/clothingService';
 
 interface ClothingViewProps {
@@ -18,7 +19,7 @@ interface ClothingViewProps {
 }
 
 export default function ClothingView({ roleId, userId, canEdit, onBack }: ClothingViewProps) {
-  const [clothing, setClothing] = useState<any[]>([]);
+  const [clothing, setClothing] = useState<VestuarioItem[]>([]);
   const [nome, setNome] = useState('');
   const [descricao, setDescricao] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -75,9 +76,9 @@ export default function ClothingView({ roleId, userId, canEdit, onBack }: Clothi
       setSelectedFile(null);
       setPreviewUrl(null);
       await loadClothing();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Erro ao salvar visual:', err);
-      setError(err?.message || 'Erro ao salvar. Tente novamente.');
+      setError((err as Error)?.message || 'Erro ao salvar. Tente novamente.');
     } finally {
       setLoading(false);
     }
