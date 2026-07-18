@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import type { Papel } from '../types/database';
-import { X, Loader2, Upload, User, ChevronDown, ChevronUp } from 'lucide-react';
+import { X, Loader2, User, ChevronDown, ChevronUp } from 'lucide-react';
 import ImageCropperModal from '../components/ImageCropperModal';
 import { hexToHsv, getColorName, isValidHex, GradientColorPicker } from '../components/ColorPicker';
 import { autoBackupPapel } from '../services/personagensSalvosService';
@@ -13,7 +13,7 @@ interface Props {
   onRefresh?: () => void;
 }
 
-export default function RoleplayCatalog({ papeis, onClose, onRefresh }: Props) {
+export default function RoleplayCatalog({ onClose, onRefresh }: Props) {
   const { profile } = useAuth();
   const [nome, setNome] = useState('');
   const [descricao, setDescricao] = useState('');
@@ -123,8 +123,8 @@ export default function RoleplayCatalog({ papeis, onClose, onRefresh }: Props) {
 
       onRefresh?.();
       onClose();
-    } catch (err: any) {
-      alert(`Erro ao salvar papel: ${err.message}`);
+    } catch (err: unknown) {
+      alert(`Erro ao salvar papel: ${(err as Error).message}`);
     } finally {
       setCriando(false);
     }
