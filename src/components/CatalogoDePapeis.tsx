@@ -19,7 +19,6 @@ export default function CatalogoDePapeis({
   partnerId,
   chatId,
   onPapeisChanged,
-  onClose,
   onOpenBastidores,
 }: CatalogoDePapeisProps) {
   const { profile } = useAuth();
