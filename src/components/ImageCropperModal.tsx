@@ -13,14 +13,14 @@ interface ImageCropperModalProps {
 export default function ImageCropperModal({ image, onCropComplete, onClose }: ImageCropperModalProps) {
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
-  const [croppedArea, setCroppedArea] = useState<any>(null);
+  const [croppedArea, setCroppedArea] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
 
-  const onCropChange = (crop: any) => setCrop(crop);
-  const onCropAreaChange = (_: any, croppedAreaPixels: any) => {
+  const onCropChange = (crop: { x: number; y: number }) => setCrop(crop);
+  const onCropAreaChange = (_: unknown, croppedAreaPixels: { x: number; y: number; width: number; height: number }) => {
     setCroppedArea(croppedAreaPixels);
   };
 
-  const createImageBlob = async (imageUrl: string, cropPixels: any): Promise<Blob | null> => {
+  const createImageBlob = async (imageUrl: string, cropPixels: { x: number; y: number; width: number; height: number }): Promise<Blob | null> => {
     const image = new Image();
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');

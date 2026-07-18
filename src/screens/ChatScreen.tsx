@@ -32,7 +32,7 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
   const [noteDescriptionInput, setNoteDescriptionInput] = useState('');
   const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
   const [isLoadingNotes, setIsLoadingNotes] = useState(false);
-  const [selectedProfileRole, setSelectedProfileRole] = useState<any | null>(null);
+  const [selectedProfileRole, setSelectedProfileRole] = useState<Papel | null>(null);
   const [showCatalog, setShowCatalog] = useState(false);
   const [showPapeisEquipados, setShowPapeisEquipados] = useState(false);
   const [confirmDeleteNote, setConfirmDeleteNote] = useState(false);
