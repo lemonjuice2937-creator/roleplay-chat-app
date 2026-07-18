@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ArrowLeft, Upload, Trash2 } from 'lucide-react';
 import ConfirmModal from './ConfirmModal';
 import {
@@ -29,18 +29,18 @@ export default function ReferencesView({ roleId, userId, canEdit, onBack }: Refe
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; filePath: string; nome: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    loadReferences();
-  }, []);
-
-  const loadReferences = async () => {
+  const loadReferences = useCallback(async () => {
     try {
       const data = await fetchReferences(roleId);
       setReferences(data);
     } catch (err) {
       console.error('Erro ao carregar referências:', err);
     }
-  };
+  }, [roleId]);
+
+  useEffect(() => {
+    loadReferences();
+  }, [loadReferences]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

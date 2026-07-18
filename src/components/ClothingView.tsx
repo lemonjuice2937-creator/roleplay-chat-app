@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ArrowLeft, Upload, Trash2 } from 'lucide-react';
 import ConfirmModal from './ConfirmModal';
 import {
@@ -29,18 +29,18 @@ export default function ClothingView({ roleId, userId, canEdit, onBack }: Clothi
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; filePath: string; nome: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    loadClothing();
-  }, []);
-
-  const loadClothing = async () => {
+  const loadClothing = useCallback(async () => {
     try {
       const data = await fetchClothing(roleId);
       setClothing(data);
     } catch (err) {
       console.error('Erro ao carregar vestuário:', err);
     }
-  };
+  }, [roleId]);
+
+  useEffect(() => {
+    loadClothing();
+  }, [loadClothing]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

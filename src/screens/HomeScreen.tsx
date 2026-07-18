@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import type { Usuario, Chat } from '../types/database';
@@ -18,11 +18,7 @@ export default function HomeScreen({ onOpenChat }: { onOpenChat: (chatId: string
   const [searching, setSearching] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadChats();
-  }, []);
-
-  async function loadChats() {
+  const loadChats = useCallback(async () => {
     if (!profile) return;
     setLoading(true);
 
@@ -67,7 +63,11 @@ export default function HomeScreen({ onOpenChat }: { onOpenChat: (chatId: string
     enriched.sort((a, b) => (b.last_at ?? '').localeCompare(a.last_at ?? ''));
     setChats(enriched);
     setLoading(false);
-  }
+  }, [profile]);
+
+  useEffect(() => {
+    loadChats();
+  }, [loadChats]);
 
   async function handleSearch() {
     if (!search.trim()) return;

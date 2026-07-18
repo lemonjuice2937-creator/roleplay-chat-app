@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { ArrowLeft, Plus, Trash2, Sparkles } from 'lucide-react';
 import ConfirmModal from './ConfirmModal';
 import {
@@ -25,18 +25,18 @@ export default function SkillsView({ roleId, userId, canEdit, onBack }: SkillsVi
   const [error, setError] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; nome: string } | null>(null);
 
-  useEffect(() => {
-    loadSkills();
-  }, []);
-
-  const loadSkills = async () => {
+  const loadSkills = useCallback(async () => {
     try {
       const data = await fetchSkills(roleId);
       setSkills(data);
     } catch (err) {
       console.error('Erro ao carregar habilidades:', err);
     }
-  };
+  }, [roleId]);
+
+  useEffect(() => {
+    loadSkills();
+  }, [loadSkills]);
 
   const handleSave = async () => {
     if (!nome.trim()) return;
