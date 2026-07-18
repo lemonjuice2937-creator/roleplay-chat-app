@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { X, User, BookOpen, Shirt, Sparkles, Pencil, Loader2, ChevronDown, ChevronUp } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { X, User, BookOpen, Shirt, Sparkles, Pencil, ChevronDown, ChevronUp } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { hexToHsv, hsvToHex, getColorName, isValidHex, GradientColorPicker } from './ColorPicker';
+import { hexToHsv, getColorName, GradientColorPicker } from './ColorPicker';
+import type { Papel } from '../types/database';
 
 import ReferencesView from './ReferencesView';
 import ClothingView from './ClothingView';
@@ -13,7 +14,7 @@ import ConfirmModal from './ConfirmModal';
 import { autoBackupPapel } from '../services/personagensSalvosService';
 
 interface RoleProfileModalProps {
-  role: any;
+  role: Papel;
   currentUserId: string;
   chatId?: string;
   onClose: () => void;
@@ -114,9 +115,9 @@ export default function RoleProfileModal({ role, currentUserId, chatId, onClose,
       setAvatarUrl(publicUrl);
       onUpdated?.();
       autoBackupPapel(role.id, currentUserId);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Erro ao upload avatar:', err);
-      alert(err?.message || 'Erro ao enviar imagem.');
+      alert((err as Error)?.message || 'Erro ao enviar imagem.');
     } finally {
       setUploading(false);
       setCropModalOpen(false);
@@ -143,9 +144,9 @@ export default function RoleProfileModal({ role, currentUserId, chatId, onClose,
       onUpdated?.();
       autoBackupPapel(role.id, currentUserId);
       onClose();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Erro ao salvar perfil:', err);
-      alert(err?.message || 'Erro ao salvar perfil.');
+      alert((err as Error)?.message || 'Erro ao salvar perfil.');
     } finally {
       setSaving(false);
     }
@@ -165,8 +166,8 @@ export default function RoleProfileModal({ role, currentUserId, chatId, onClose,
       onUpdated?.();
       autoBackupPapel(role.id, currentUserId);
       onClose();
-    } catch (err: any) {
-      alert(err?.message || 'Erro ao deixar papel.');
+    } catch (err: unknown) {
+      alert((err as Error)?.message || 'Erro ao deixar papel.');
     }
   };
 
@@ -181,8 +182,8 @@ export default function RoleProfileModal({ role, currentUserId, chatId, onClose,
       onUpdated?.();
       autoBackupPapel(role.id, currentUserId);
       onClose();
-    } catch (err: any) {
-      alert(err?.message || 'Erro ao equipar papel.');
+    } catch (err: unknown) {
+      alert((err as Error)?.message || 'Erro ao equipar papel.');
     }
   };
 
@@ -195,8 +196,8 @@ export default function RoleProfileModal({ role, currentUserId, chatId, onClose,
       if (error) throw error;
       onDeleted?.();
       onClose();
-    } catch (err: any) {
-      alert(err?.message || 'Erro ao excluir papel.');
+    } catch (err: unknown) {
+      alert((err as Error)?.message || 'Erro ao excluir papel.');
     }
   };
 
