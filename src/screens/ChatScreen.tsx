@@ -2,10 +2,11 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import type { Usuario, Mensagem, Papel, ConfigChat } from '../types/database';
-import { ArrowLeft, Send, Loader2, Theater, BookOpen, ImageIcon, MapPinned, X, Pencil } from 'lucide-react';
-import RoleplayCatalog from './RoleplayCatalog';
+import { ArrowLeft, Send, Loader2, Theater, ImageIcon, MapPinned, X, Users } from 'lucide-react';
 import BackgroundSettings from './BackgroundSettings';
 import RoleProfileModal from '../components/RoleProfileModal';
+import CatalogoDePapeis from '../components/CatalogoDePapeis';
+import PapeisEquipados from '../components/PapeisEquipados';
 
 export default function ChatScreen({ chatId, partner, onBack }: { chatId: string; partner: Usuario; onBack: () => void }) {
   const { profile } = useAuth();
@@ -18,9 +19,8 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
   const [equippedPapeis, setEquippedPapeis] = useState<Papel[]>([]);
   const [roleplayMode, setRoleplayMode] = useState(false);
   const [activePapel, setActivePapel] = useState<Papel | null>(null);
-  const [showCatalog, setShowCatalog] = useState(false);
+  // showCatalog removed — CatalogoDePapeis manages its own visibility internally
   const [showBgSettings, setShowBgSettings] = useState(false);
-  const [isMenuPapeisAberto, setIsMenuPapeisAberto] = useState(false);
   const [config, setConfig] = useState<ConfigChat | null>(null);
   const [pinnedNotes, setPinnedNotes] = useState<{id: string, title: string, description: string}[]>([]);
   const [isPinnedLoreOpen, setIsPinnedLoreOpen] = useState(false);
@@ -30,6 +30,8 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
   const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
   const [isLoadingNotes, setIsLoadingNotes] = useState(false);
   const [selectedProfileRole, setSelectedProfileRole] = useState<any | null>(null);
+  const [showCatalog, setShowCatalog] = useState(false);
+  const [showPapeisEquipados, setShowPapeisEquipados] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -358,7 +360,7 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
       const next = !prev;
       if (!next) {
         setActivePapel(null);
-        setIsMenuPapeisAberto(false);
+        setShowCatalog(false);
       }
       else if (equippedPapeis.length > 0 && !activePapel) {
         setActivePapel(equippedPapeis[0]);
@@ -427,6 +429,15 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
             <MapPinned size={20} className="text-white/70" />
           </button>
 
+          {/* Catalog button */}
+          <button
+            onClick={() => setShowCatalog(true)}
+            className="w-10 h-10 rounded-full bg-navy-600 flex items-center justify-center active:scale-90 transition"
+            title="Catálogo de Papéis"
+          >
+            <Users size={18} className="text-white/70" />
+          </button>
+
           {/* Roleplay toggle */}
           <button
           onClick={toggleRoleplay}
@@ -436,15 +447,6 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
           title="Modo Encenação"
         >
           <Theater size={18} />
-        </button>
-
-        {/* Catalog */}
-        <button
-          onClick={() => setShowCatalog(true)}
-          className="w-10 h-10 rounded-full bg-navy-600 flex items-center justify-center active:scale-90 transition"
-          title="Catálogo de Papéis"
-        >
-          <BookOpen size={18} className="text-white/70" />
         </button>
 
         {/* Background settings */}
@@ -563,136 +565,48 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
       </div>
 
       {/* Bottom area */}
-      <div className="ml-2 mr-3 mb-2 z-20 shrink-0 flex flex-row items-center gap-5 max-w-full">
-        {/* Left element: standalone avatar button */}
+      <div className="ml-1 mr-1 mb-2 z-20 shrink-0 flex flex-row items-center gap-5 max-w-full">
+        {/* Left element: glowing orb button with active papel avatar */}
         {roleplayMode && equippedPapeis.length > 0 && (
           <button
-            onClick={() => setIsMenuPapeisAberto((prev) => !prev)}
-            className="h-14 shrink-0 flex items-center px-3 py-1 bg-navy-700 rounded-3xl relative active:scale-95 transition"
+            onClick={() => setShowPapeisEquipados(true)}
+            className="h-14 w-14 shrink-0 flex items-center justify-center bg-navy-700 rounded-full relative active:scale-95 transition
+                       border-2 border-neon shadow-lg shadow-purple-500/30 mt-8 translate-x-2"
             title="Trocar papel"
           >
-            {(() => {
-              const sorted = [...equippedPapeis].sort((a, b) => {
-                if (a.id === activePapel?.id) return -1;
-                if (b.id === activePapel?.id) return 1;
-                return 0;
-              });
-              const count = Math.min(sorted.length, 3);
-              return sorted.slice(0, 3).map((papel, i) => {
-                const overlapClass = i === 0 ? '' : 'ml-[-20px]';
-                const overlayClass = i === 0 ? '' : i === 1 ? 'avatar-overlay-50' : 'avatar-overlay-75';
-                return (
-                  <div
-                    key={papel.id}
-                    className={`w-12 h-12 rounded-full bg-navy-800 overflow-hidden shrink-0 relative ${overlayClass} ${overlapClass}`}
-                    style={{ zIndex: (count - i) * 10 }}
-                  >
-                    {papel.avatar_url ? (
-                      <img src={papel.avatar_url} alt={papel.nome} className="w-full h-full object-cover" />
-                    ) : (
-                      <div
-                        className="w-full h-full flex items-center justify-center text-sm font-bold"
-                        style={{ backgroundColor: papel.cor_balao, color: papel.cor_fonte }}
-                      >
-                        {papel.nome.charAt(0).toUpperCase()}
-                      </div>
-                    )}
-                  </div>
-                );
-              });
-            })()}
-            {equippedPapeis.length > 3 && (
-              <span className="absolute top-0 right-0 w-5 h-5 rounded-full bg-neon text-white text-[10px] font-bold flex items-center justify-center z-10">
-                +{equippedPapeis.length - 3}
-              </span>
-            )}
+            <div className="w-12 h-12 rounded-full overflow-hidden flex items-center justify-center
+                           bg-gradient-to-br from-neon-light to-neon-dark glow-purple-sm">
+              {activePapel?.avatar_url ? (
+                <img src={activePapel.avatar_url} alt={activePapel.nome} className="w-full h-full object-cover" />
+              ) : activePapel ? (
+                <span className="text-white text-lg font-bold">{activePapel.nome.charAt(0).toUpperCase()}</span>
+              ) : null}
+            </div>
           </button>
         )}
 
-        {/* Right element: input capsule or menu */}
-        {isMenuPapeisAberto ? (
-          /* Selection sheet */
-          <div className="flex-1 bg-navy-700 rounded-3xl px-4 py-3 flex flex-col gap-2 min-w-0">
-            <span className="text-white/40 text-xs uppercase tracking-wider text-center">papeis abertos</span>
-            <div className="max-h-48 overflow-y-auto no-scrollbar flex flex-col gap-2">
-              {equippedPapeis.map((papel) => (
-                <button
-                  key={papel.id}
-                  onClick={() => {
-                    setActivePapel(papel);
-                    setIsMenuPapeisAberto(false);
-                  }}
-                  className={`relative z-10 flex flex-row items-center gap-3 shrink-0 rounded-full px-3 py-2 transition ${
-                    activePapel?.id === papel.id
-                      ? 'bg-neon/20 ring-1 ring-neon'
-                      : 'bg-navy-600 active:scale-95'
-                  }`}
-                >
-                  {papel.avatar_url ? (
-                    <span
-                      onClick={(e) => { e.stopPropagation(); setSelectedProfileRole(papel); }}
-                      className="cursor-pointer"
-                    >
-                      <img
-                        src={papel.avatar_url}
-                        alt={papel.nome}
-                        className="w-9 h-9 rounded-full object-cover shrink-0 border-2"
-                        style={{
-                          borderColor: activePapel?.id === papel.id ? papel.cor_balao : 'transparent',
-                        }}
-                      />
-                    </span>
-                  ) : (
-                    <span
-                      onClick={(e) => { e.stopPropagation(); setSelectedProfileRole(papel); }}
-                      className="cursor-pointer"
-                    >
-                      <div
-                        className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold border-2 shrink-0"
-                        style={{
-                          backgroundColor: papel.cor_balao,
-                          color: papel.cor_fonte,
-                          borderColor: activePapel?.id === papel.id ? papel.cor_balao : 'transparent',
-                        }}
-                      >
-                        {papel.nome.charAt(0).toUpperCase()}
-                      </div>
-                    </span>
-                  )}
-                  <span className="text-sm text-white truncate flex-1">{papel.nome}</span>
-                  <span
-                    onClick={(e) => { e.stopPropagation(); setSelectedProfileRole(papel); }}
-                    className="cursor-pointer ml-1 shrink-0 p-1 rounded-full hover:bg-white/10 transition"
-                  >
-                    <Pencil size={14} className="text-white/40 hover:text-white/70" />
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
-        ) : (
-          /* Standalone input capsule */
-          <div className="flex-1 flex flex-col gap-1 min-w-0">
+        {/* Right element: input capsule */}
+        <div className="flex-1 flex flex-col gap-1 min-w-0 overflow-visible">
             {/* Shortcut bar */}
-            <div className="flex gap-1.5 px-1 overflow-x-auto no-scrollbar">
-              <button onClick={() => insertShortcut('— ')} className="shrink-0 px-2.5 py-1 text-[11px] rounded-full bg-navy-800 text-white/60 hover:text-white hover:bg-navy-600 active:scale-95 transition border border-white/5">
+            <div className="flex gap-2 px-0 overflow-x-auto no-scrollbar ml-4">
+              <button onClick={() => insertShortcut('— ')} className="shrink-0 px-3 py-1.5 text-xs rounded-full bg-navy-800 text-white/60 hover:text-white hover:bg-navy-600 active:scale-95 transition border border-white/5">
                 — Speech
               </button>
-              <button onClick={() => insertShortcut('* ', '* ', ' *')} className="shrink-0 px-2.5 py-1 text-[11px] rounded-full bg-navy-800 text-white/60 hover:text-white hover:bg-navy-600 active:scale-95 transition border border-white/5">
+              <button onClick={() => insertShortcut('* ', '* ', ' *')} className="shrink-0 px-3 py-1.5 text-xs rounded-full bg-navy-800 text-white/60 hover:text-white hover:bg-navy-600 active:scale-95 transition border border-white/5">
                 * Action
               </button>
-              <button onClick={() => insertShortcut('(())', '(( ', ' ))')} className="shrink-0 px-2.5 py-1 text-[11px] rounded-full bg-navy-800 text-white/60 hover:text-white hover:bg-navy-600 active:scale-95 transition border border-white/5">
+              <button onClick={() => insertShortcut('(())', '(( ', ' ))')} className="shrink-0 px-3 py-1.5 text-xs rounded-full bg-navy-800 text-white/60 hover:text-white hover:bg-navy-600 active:scale-95 transition border border-white/5">
                 (( Thought ))
               </button>
-              <button onClick={() => insertShortcut('// ')} className="shrink-0 px-2.5 py-1 text-[11px] rounded-full bg-navy-800 text-white/60 hover:text-white hover:bg-navy-600 active:scale-95 transition border border-white/5">
+              <button onClick={() => insertShortcut('// ')} className="shrink-0 px-3 py-1.5 text-xs rounded-full bg-navy-800 text-white/60 hover:text-white hover:bg-navy-600 active:scale-95 transition border border-white/5">
                 // Off Topic
               </button>
-              <button onClick={() => insertShortcut('> ')} className="shrink-0 px-2.5 py-1 text-[11px] rounded-full bg-navy-800 text-white/60 hover:text-white hover:bg-navy-600 active:scale-95 transition border border-white/5">
+              <button onClick={() => insertShortcut('> ')} className="shrink-0 px-3 py-1.5 text-xs rounded-full bg-navy-800 text-white/60 hover:text-white hover:bg-navy-600 active:scale-95 transition border border-white/5">
                 {'>'} Narrador
               </button>
             </div>
             {/* Input */}
-            <div className="bg-navy-700 rounded-3xl px-3 py-2 flex gap-2 items-center">
+            <div className="bg-navy-700 rounded-3xl px-4 py-1 flex gap-2 items-center">
               <input
                 ref={inputRef}
                 type="text"
@@ -705,7 +619,7 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
               <button
                 onClick={handleSend}
                 disabled={!input.trim() || sending}
-                className="w-11 h-11 rounded-full bg-neon flex items-center justify-center shrink-0 active:scale-90 transition disabled:opacity-40"
+                className="w-11 h-11 rounded-full bg-neon flex items-center justify-center shrink-0 active:scale-90 transition disabled:opacity-40 ml-4 translate-x-2"
               >
                 {sending ? (
                   <Loader2 size={20} className="animate-spin text-white" />
@@ -715,15 +629,24 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
               </button>
             </div>
           </div>
-        )}
       </div>
 
-      {/* Catalog Modal */}
+      {/* Catálogo de Papéis — full-screen catalog via header button */}
       {showCatalog && (
-        <RoleplayCatalog
-          papeis={papeis}
+        <CatalogoDePapeis
+          onPapeisChanged={handlePapeisUpdated}
           onClose={() => setShowCatalog(false)}
-          onRefresh={handlePapeisUpdated}
+        />
+      )}
+
+      {/* Papeis Equipados — bottom panel via glowing orb */}
+      {showPapeisEquipados && (
+        <PapeisEquipados
+          equippedPapeis={equippedPapeis}
+          activePapel={activePapel}
+          onSelectPapel={(papel) => setActivePapel(papel)}
+          onOpenProfile={(papel) => setSelectedProfileRole(papel)}
+          onClose={() => setShowPapeisEquipados(false)}
         />
       )}
 
@@ -902,6 +825,7 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
           currentUserId={profile?.id || ""}
           onClose={() => setSelectedProfileRole(null)}
           onUpdated={loadPapeis}
+          onDeleted={loadPapeis}
         />
       )}
     </div>

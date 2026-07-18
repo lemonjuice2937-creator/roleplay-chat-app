@@ -12,8 +12,8 @@ export default {
           500: '#2D3047',
         },
         neon: {
-          DEFAULT: '#8A2BE2',
-          light: '#A855F7',
+          DEFAULT: '#7C3AED',
+          light: '#8B5CF6',
           dark: '#6B21A8',
         },
       },

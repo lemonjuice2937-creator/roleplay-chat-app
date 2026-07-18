@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Plus, Trash2, Sparkles } from 'lucide-react';
+import ConfirmModal from './ConfirmModal';
 import {
   fetchSkills,
   saveSkillRecord,
@@ -21,6 +22,7 @@ export default function SkillsView({ roleId, userId, isOwner, onBack }: SkillsVi
   const [descricao, setDescricao] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; nome: string } | null>(null);
 
   useEffect(() => {
     loadSkills();
@@ -119,7 +121,7 @@ export default function SkillsView({ roleId, userId, isOwner, onBack }: SkillsVi
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
                     <Sparkles size={14} className="text-purple-400 shrink-0" />
-                    <p className="text-white font-medium truncate">{skill.nome}</p>
+                    <p className="text-purple-400 font-bold text-lg truncate" style={{ textShadow: '0 0 8px rgba(168,85,247,0.6), 0 0 20px rgba(168,85,247,0.3)' }}>{skill.nome}</p>
                   </div>
                   {skill.descricao && (
                     <p className="text-white/50 text-sm leading-relaxed">{skill.descricao}</p>
@@ -127,7 +129,7 @@ export default function SkillsView({ roleId, userId, isOwner, onBack }: SkillsVi
                 </div>
                 {isOwner && (
                   <button
-                    onClick={() => handleDelete(skill.id)}
+                    onClick={() => setDeleteTarget({ id: skill.id, nome: skill.nome })}
                     className="shrink-0 w-8 h-8 bg-red-500/10 hover:bg-red-500/20 active:scale-90 transition-all duration-200 rounded-xl flex items-center justify-center"
                   >
                     <Trash2 size={14} className="text-red-400" />
@@ -145,6 +147,14 @@ export default function SkillsView({ roleId, userId, isOwner, onBack }: SkillsVi
           </div>
         )}
       </div>
+
+      {deleteTarget && (
+        <ConfirmModal
+          message={`Você tem certeza de que quer excluir ${deleteTarget.nome}?`}
+          onConfirm={() => { handleDelete(deleteTarget.id); setDeleteTarget(null); }}
+          onCancel={() => setDeleteTarget(null)}
+        />
+      )}
     </div>
   );
 }

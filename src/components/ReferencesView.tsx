@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, Upload, Trash2 } from 'lucide-react';
+import ConfirmModal from './ConfirmModal';
 import {
   fetchReferences,
   uploadReferenceFile,
@@ -24,6 +25,7 @@ export default function ReferencesView({ roleId, userId, isOwner, onBack }: Refe
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; filePath: string; nome: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -184,14 +186,14 @@ export default function ReferencesView({ roleId, userId, isOwner, onBack }: Refe
               </div>
               <div className="p-3">
                 {ref.nome && (
-                  <p className="text-white text-sm font-medium truncate">{ref.nome}</p>
+                  <p className="text-purple-400 text-sm font-bold truncate" style={{ textShadow: '0 0 8px rgba(168,85,247,0.6), 0 0 20px rgba(168,85,247,0.3)' }}>{ref.nome}</p>
                 )}
                 {ref.descricao && (
                   <p className="text-white/50 text-xs truncate mt-1">{ref.descricao}</p>
                 )}
                 {isOwner && (
                   <button
-                    onClick={() => handleDelete(ref.id, extractFilePath(ref.imagem_url))}
+                    onClick={() => setDeleteTarget({ id: ref.id, filePath: extractFilePath(ref.imagem_url), nome: ref.nome })}
                     className="mt-2 w-full py-1.5 bg-red-500/10 hover:bg-red-500/20 active:scale-95 transition-all duration-200 rounded-xl text-red-400 text-xs flex items-center justify-center gap-1"
                   >
                     <Trash2 size={12} />
@@ -209,6 +211,15 @@ export default function ReferencesView({ roleId, userId, isOwner, onBack }: Refe
           </div>
         )}
       </div>
+
+      {deleteTarget && (
+        <ConfirmModal
+          message={`Você tem certeza de que quer excluir ${deleteTarget.nome}?`}
+          onConfirm={() => { handleDelete(deleteTarget.id, deleteTarget.filePath); setDeleteTarget(null); }}
+          onCancel={() => setDeleteTarget(null)}
+        />
+      )}
     </div>
   );
 }
+

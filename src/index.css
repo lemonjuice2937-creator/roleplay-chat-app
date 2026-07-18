@@ -44,3 +44,34 @@
     @apply rounded-full px-5 py-3 bg-navy-700 text-white placeholder-white/40 outline-none transition-all duration-200 focus:ring-2 focus:ring-neon;
   }
 }
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 30px rgba(124, 58, 237, 0.4); }
+  50% { box-shadow: 0 0 60px rgba(124, 58, 237, 0.8); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@layer utilities {
+  .glow-purple {
+    box-shadow: 0 0 180px rgba(124, 58, 237, 0.8);
+  }
+  .glow-purple-sm {
+    box-shadow: 0 0 60px rgba(124, 58, 237, 0.6);
+  }
+  .glow-purple-xs {
+    box-shadow: 0 0 30px rgba(124, 58, 237, 0.4);
+  }
+  .accent-neon {
+    accent-color: #7c3aed;
+  }
+  .animate-glow {
+    animation: pulse-glow 3s ease-in-out infinite;
+  }
+  .animate-shimmer {
+    animation: shimmer 2s linear infinite;
+  }
+}

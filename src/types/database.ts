@@ -31,6 +31,7 @@ export interface Mensagem {
   texto: string;
   created_at: string;
   papel_id: string | null;
+  read_at: string | null;
   papel?: Papel | null;
   sender?: Usuario | null;
 }
