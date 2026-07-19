@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Theater, Loader2 } from 'lucide-react';
+import LoginWithGoogle from '../components/LoginWithGoogle';
 
 export default function AuthScreen() {
   const { signIn, signUp } = useAuth();
@@ -11,6 +12,18 @@ export default function AuthScreen() {
   const [displayName, setDisplayName] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    const oauthError = params.get('error') || hashParams.get('error');
+    const oauthErrorDesc = params.get('error_description') || hashParams.get('error_description');
+
+    if (oauthError) {
+      setError(oauthErrorDesc || 'Erro ao autenticar com Google. Tente novamente.');
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -58,6 +71,17 @@ export default function AuthScreen() {
               Cadastrar
             </button>
           </div>
+
+          {mode === 'login' && (
+            <>
+              <LoginWithGoogle onError={setError} />
+              <div className="flex items-center gap-3 my-4">
+                <div className="flex-1 h-px bg-white/10" />
+                <span className="text-white/30 text-xs">ou</span>
+                <div className="flex-1 h-px bg-white/10" />
+              </div>
+            </>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-3">
             {mode === 'signup' && (

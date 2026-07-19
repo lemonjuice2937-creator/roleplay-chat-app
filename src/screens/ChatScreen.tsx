@@ -528,7 +528,7 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
                       <img
                         src={papel.avatar_url}
                         alt={papel.nome}
-                        className="w-11 h-11 rounded-full object-cover border-2"
+                        className={`w-11 h-11 rounded-full object-cover border-2 ${isMine ? 'ml-1' : 'mr-1'}`}
                         style={{ borderColor: papel.cor_balao }}
                       />
                     </span>
@@ -565,7 +565,7 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
                       </span>
                     )}
                     <div
-                      className="rounded-3xl px-4 py-2.5"
+                      className="rounded-xl px-4 py-2.5"
                       style={
                         msg.texto.startsWith('>')
                           ? { backgroundColor: 'rgba(0, 0, 0, 0.7)', color: '#FFFFFF' }
@@ -588,13 +588,13 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
       </div>
 
       {/* Bottom area */}
-      <div className="ml-1 mr-1 mb-2 z-20 shrink-0 flex flex-row items-center gap-5 max-w-full">
+      <div className="ml-1 mr-1 mb-2 z-20 shrink-0 flex flex-row items-center gap-2 max-w-full">
         {/* Left element: glowing orb button with active papel avatar */}
         {roleplayMode && equippedPapeis.length > 0 && (
           <button
             onClick={() => setShowPapeisEquipados(true)}
             className="h-14 w-14 shrink-0 flex items-center justify-center bg-navy-700 rounded-full relative active:scale-95 transition
-                       border-2 border-neon shadow-lg shadow-purple-500/30 mt-8 translate-x-2"
+                       border-2 border-neon shadow-lg shadow-purple-500/30 mt-8 translate-x-0.5"
             title="Trocar papel"
           >
             <div className="w-12 h-12 rounded-full overflow-hidden flex items-center justify-center
@@ -629,7 +629,7 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
               </button>
             </div>
             {/* Input */}
-            <div className="bg-navy-700 rounded-3xl px-4 py-1 flex gap-2 items-center">
+            <div className="bg-navy-700 rounded-3xl px-4 py-1 flex gap-2 items-center border-2 border-transparent transition-colors duration-200 focus-within:border-neon">
               <input
                 ref={inputRef}
                 type="text"

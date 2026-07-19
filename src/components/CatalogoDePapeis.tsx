@@ -176,35 +176,35 @@ export default function CatalogoDePapeis({
                   </button>
 
                   {visiblePapeis.map((papel) => (
-                    <div key={papel.id} className="flex flex-col items-center gap-1.5"
+                    <button key={papel.id}
+                      onClick={() => setEditingRole(papel)}
+                      className="flex flex-col items-center gap-1.5"
                       style={{ opacity: papel.equipado ? 1 : 0.5 }}>
-                          <button onClick={() => setEditingRole(papel)} className="block">
-                        <div
-                          className="w-16 h-16 rounded-full overflow-hidden shrink-0 mx-auto
-                                     border-[3px] transition-all duration-200
-                                     active:scale-90 hover:scale-105"
-                           style={{
-                             borderColor: papel.cor_balao,
-                             boxShadow: `0 2px 6px ${papel.cor_balao}30`,
-                           }}
-                         >
-                           {papel.avatar_url ? (
-                             <img src={papel.avatar_url} alt={papel.nome} className="w-full h-full object-cover" />
-                           ) : (
-                             <div
-                               className="w-full h-full flex items-center justify-center text-lg font-bold"
-                               style={{ backgroundColor: papel.cor_balao, color: papel.cor_fonte }}
-                             >
-                               {papel.nome.charAt(0).toUpperCase()}
-                             </div>
-                           )}
-                         </div>
-                       </button>
-                       <span className="text-xs font-medium text-white truncate w-full text-center leading-tight">
-                         {papel.nome}
-                       </span>
-                     </div>
-                   ))}
+                      <div
+                        className="w-16 h-16 rounded-full overflow-hidden shrink-0
+                                   border-[3px] transition-all duration-200
+                                   active:scale-90 hover:scale-105"
+                        style={{
+                          borderColor: papel.cor_balao,
+                          boxShadow: `0 2px 6px ${papel.cor_balao}30`,
+                        }}
+                      >
+                        {papel.avatar_url ? (
+                          <img src={papel.avatar_url} alt={papel.nome} className="w-full h-full object-cover" />
+                        ) : (
+                          <div
+                            className="w-full h-full flex items-center justify-center text-lg font-bold"
+                            style={{ backgroundColor: papel.cor_balao, color: papel.cor_fonte }}
+                          >
+                            {papel.nome.charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                      </div>
+                      <span className="text-xs font-medium text-white truncate leading-tight">
+                        {papel.nome}
+                      </span>
+                    </button>
+                    ))}
                  </div>
                </div>
 
@@ -213,35 +213,35 @@ export default function CatalogoDePapeis({
                     <h3 className="text-[11px] font-semibold text-purple-400/60 uppercase tracking-wider mb-1.5">Papéis do parceiro</h3>
                     <div className="grid grid-cols-4 gap-4">
                        {visiblePartnerPapeis.map((papel) => (
-                         <div key={papel.id} className="flex flex-col items-center gap-1.5"
+                         <button key={papel.id}
+                           onClick={() => setEditingRole(papel)}
+                           className="flex flex-col items-center gap-1.5"
                            style={{ opacity: papel.equipado ? 1 : 0.5 }}>
-                            <button onClick={() => setEditingRole(papel)} className="block">
-                              <div
-                                className="w-16 h-16 rounded-full overflow-hidden shrink-0 mx-auto
-                                          border-[3px] border-dashed transition-all duration-200
-                                          active:scale-90 hover:scale-105"
-                               style={{
-                                 borderColor: papel.cor_balao,
-                                 boxShadow: `0 2px 6px ${papel.cor_balao}30`,
-                               }}
-                            >
-                              {papel.avatar_url ? (
-                                <img src={papel.avatar_url} alt={papel.nome} className="w-full h-full object-cover" />
-                              ) : (
-                                <div
-                                  className="w-full h-full flex items-center justify-center text-lg font-bold"
-                                  style={{ backgroundColor: papel.cor_balao, color: papel.cor_fonte }}
-                                >
-                                  {papel.nome.charAt(0).toUpperCase()}
-                                </div>
-                              )}
+                           <div
+                             className="w-16 h-16 rounded-full overflow-hidden shrink-0
+                                        border-[3px] border-dashed transition-all duration-200
+                                        active:scale-90 hover:scale-105"
+                             style={{
+                               borderColor: papel.cor_balao,
+                               boxShadow: `0 2px 6px ${papel.cor_balao}30`,
+                             }}
+                           >
+                             {papel.avatar_url ? (
+                               <img src={papel.avatar_url} alt={papel.nome} className="w-full h-full object-cover" />
+                             ) : (
+                               <div
+                                 className="w-full h-full flex items-center justify-center text-lg font-bold"
+                                 style={{ backgroundColor: papel.cor_balao, color: papel.cor_fonte }}
+                               >
+                                 {papel.nome.charAt(0).toUpperCase()}
+                               </div>
+                             )}
                            </div>
+                           <span className="text-xs font-medium text-white truncate leading-tight">
+                             {papel.nome}
+                           </span>
                          </button>
-                         <span className="text-xs font-medium text-white truncate w-full text-center leading-tight">
-                           {papel.nome}
-                         </span>
-                       </div>
-                     ))}
+                       ))}
                   </div>
                 </div>
               )}

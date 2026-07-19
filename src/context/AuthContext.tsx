@@ -10,6 +10,8 @@ interface AuthContextValue {
   loading: boolean;
   signUp: (email: string, password: string, username: string, displayName: string) => Promise<{ error: string | null }>;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
+  signInWithGoogle: () => Promise<{ error: string | null }>;
+  updateProfile: (data: { username?: string; display_name?: string }) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
@@ -86,6 +88,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error: null };
   }
 
+  async function signInWithGoogle() {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin,
+      },
+    });
+    if (error) return { error: error.message };
+    return { error: null };
+  }
+
+  async function updateProfile(data: { username?: string; display_name?: string }) {
+    if (!session?.user) return { error: 'Não autenticado' };
+
+    if (data.username) {
+      const cleanUsername = data.username.toLowerCase().replace(/[^a-z0-9_]/g, '');
+      const { data: existing } = await supabase
+        .from('usuarios')
+        .select('id')
+        .eq('username', cleanUsername)
+        .neq('id', session.user.id)
+        .maybeSingle();
+      if (existing) return { error: 'Este @username já está em uso' };
+      data.username = cleanUsername;
+    }
+
+    const { error } = await supabase
+      .from('usuarios')
+      .update(data)
+      .eq('id', session.user.id);
+    if (error) return { error: error.message };
+
+    await fetchProfile(session.user.id);
+    return { error: null };
+  }
+
   async function signOut() {
     await supabase.auth.signOut();
     setProfile(null);
@@ -96,7 +134,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ session, user: session?.user ?? null, profile, loading, signUp, signIn, signOut, refreshProfile }}>
+    <AuthContext.Provider value={{ session, user: session?.user ?? null, profile, loading, signUp, signIn, signInWithGoogle, updateProfile, signOut, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );

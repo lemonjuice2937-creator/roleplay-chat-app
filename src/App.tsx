@@ -3,12 +3,18 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import AuthScreen from './screens/AuthScreen';
 import HomeScreen from './screens/HomeScreen';
 import ChatScreen from './screens/ChatScreen';
+import GoogleProfileCompletion from './components/GoogleProfileCompletion';
 import type { Usuario } from './types/database';
 import { Loader2 } from 'lucide-react';
 
+function needsProfileCompletion(username: string): boolean {
+  return /_(gmail|hotmail|outlook|yahoo|live|icloud)\.[a-z]{2,}$/.test(username);
+}
+
 function AppContent() {
-  const { session, loading } = useAuth();
+  const { session, profile, loading } = useAuth();
   const [activeChat, setActiveChat] = useState<{ chatId: string; partner: Usuario } | null>(null);
+  const [profileCompleted, setProfileCompleted] = useState(false);
 
   if (loading) {
     return (
@@ -19,6 +25,18 @@ function AppContent() {
   }
 
   if (!session) return <AuthScreen />;
+
+  if (!profile) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-navy-800">
+        <Loader2 size={32} className="animate-spin text-neon" />
+      </div>
+    );
+  }
+
+  if (!profileCompleted && needsProfileCompletion(profile.username)) {
+    return <GoogleProfileCompletion onComplete={() => setProfileCompleted(true)} />;
+  }
 
   if (activeChat) {
     return (

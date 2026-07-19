@@ -176,6 +176,7 @@ export async function importarPersonagem(
       avatar_url: avatarUrl,
       cor_balao: papel.cor_balao,
       cor_fonte: papel.cor_fonte,
+      descricao: papel.descricao ?? null,
       equipado: false,
     })
     .select()

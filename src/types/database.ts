@@ -17,6 +17,7 @@ export interface Papel {
   id: string;
   user_id: string;
   nome: string;
+  descricao?: string | null;
   avatar_url: string | null;
   cor_balao: string;
   cor_fonte: string;
