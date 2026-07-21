@@ -46,8 +46,8 @@
 }
 
 @keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 30px rgba(124, 58, 237, 0.4); }
-  50% { box-shadow: 0 0 60px rgba(124, 58, 237, 0.8); }
+  0%, 100% { box-shadow: 0 0 30px rgba(13, 92, 168, 0.4); }
+  50% { box-shadow: 0 0 60px rgba(13, 92, 168, 0.8); }
 }
 
 @keyframes shimmer {
@@ -57,16 +57,16 @@
 
 @layer utilities {
   .glow-purple {
-    box-shadow: 0 0 180px rgba(124, 58, 237, 0.8);
+    box-shadow: 0 0 180px rgba(13, 92, 168, 0.8);
   }
   .glow-purple-sm {
-    box-shadow: 0 0 60px rgba(124, 58, 237, 0.6);
+    box-shadow: 0 0 60px rgba(13, 92, 168, 0.6);
   }
   .glow-purple-xs {
-    box-shadow: 0 0 30px rgba(124, 58, 237, 0.4);
+    box-shadow: 0 0 30px rgba(13, 92, 168, 0.4);
   }
   .accent-neon {
-    accent-color: #7c3aed;
+    accent-color: #0D5CA8;
   }
   .animate-glow {
     animation: pulse-glow 3s ease-in-out infinite;

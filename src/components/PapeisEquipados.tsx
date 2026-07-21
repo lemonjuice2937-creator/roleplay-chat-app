@@ -67,7 +67,7 @@ export default function PapeisEquipados({
                     onClick={() => { onSelectPapel(papel); onClose(); }}
                     className={`flex-1 h-11 rounded-full text-sm font-medium transition-all active:scale-95 ${
                       isActive
-                        ? 'bg-neon text-white shadow-lg shadow-purple-500/30'
+                        ? 'bg-neon text-white shadow-lg shadow-accent-500/30'
                         : 'bg-navy-700 text-white/70 hover:bg-navy-600 border border-white/10'
                     }`}
                   >

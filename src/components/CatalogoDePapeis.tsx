@@ -88,13 +88,13 @@ export default function CatalogoDePapeis({
   return (
     <>
       <div
-        className="fixed inset-x-0 top-16 z-40 bg-navy-900/95 backdrop-blur-xl border-b border-purple-500/20 overflow-y-auto transition-all duration-300 rounded-b-3xl"
+        className="fixed inset-x-0 top-16 z-40 bg-navy-900/95 backdrop-blur-xl border-b border-accent-500/20 overflow-y-auto transition-all duration-300 rounded-b-3xl"
         style={{ height: expanded ? '85vh' : '50vh' }}
       >
         {/* Top bar */}
-        <div className="flex items-center justify-between px-4 py-2 shrink-0 border-b border-purple-500/10">
+        <div className="flex items-center justify-between px-4 py-2 shrink-0 border-b border-accent-500/10">
           <div className="flex items-center gap-2">
-            <Sparkles size={14} className="text-purple-400" />
+            <Sparkles size={14} className="text-accent-400" />
             <h2 className="text-xs font-bold text-white tracking-wide">Catálogo de Papéis</h2>
           </div>
           <div className="flex items-center gap-1.5 relative" ref={settingsRef}>
@@ -116,7 +116,7 @@ export default function CatalogoDePapeis({
                   }}
                   className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-white/80 hover:bg-navy-700 transition text-left"
                 >
-                  <Download size={15} className="text-purple-400" />
+                  <Download size={15} className="text-accent-400" />
                   Importar personagens
                 </button>
               </div>
@@ -140,7 +140,7 @@ export default function CatalogoDePapeis({
         <div className="px-4 py-2.5">
           {loading ? (
             <div className="flex items-center justify-center py-8">
-              <Loader2 size={20} className="animate-spin text-purple-400" />
+              <Loader2 size={20} className="animate-spin text-accent-400" />
             </div>
           ) : papeis.length === 0 && partnerPapeis.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-6 text-center gap-2">
@@ -166,11 +166,11 @@ export default function CatalogoDePapeis({
                     onClick={() => setShowCreateModal(true)}
                     className="flex flex-col items-center gap-1.5 group"
                   >
-                    <div className="w-16 h-16 rounded-full bg-navy-800 border-2 border-dashed border-purple-500/30
+                    <div className="w-16 h-16 rounded-full bg-navy-800 border-2 border-dashed border-accent-500/30
                                     flex items-center justify-center
-                                    group-hover:border-purple-400 group-hover:bg-navy-700
+                                    group-hover:border-accent-400 group-hover:bg-navy-700
                                     active:scale-95 transition-all duration-200">
-                      <Plus size={24} className="text-purple-400/60 group-hover:text-purple-400" />
+                      <Plus size={24} className="text-accent-400/60 group-hover:text-accent-400" />
                     </div>
                     <span className="text-[11px] text-white/40 group-hover:text-white/60">Novo</span>
                   </button>
@@ -210,7 +210,7 @@ export default function CatalogoDePapeis({
 
                 {partnerPapeis.length > 0 && (
                   <div>
-                    <h3 className="text-[11px] font-semibold text-purple-400/60 uppercase tracking-wider mb-1.5">Papéis do parceiro</h3>
+                    <h3 className="text-[11px] font-semibold text-accent-400/60 uppercase tracking-wider mb-1.5">Papéis do parceiro</h3>
                     <div className="grid grid-cols-4 gap-4">
                        {visiblePartnerPapeis.map((papel) => (
                          <button key={papel.id}

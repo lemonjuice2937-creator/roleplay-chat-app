@@ -496,7 +496,7 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
         )}
 
         {/* Messages (z-10) */}
-        <div className="relative z-10 px-4 py-4 space-y-2 min-h-full">
+        <div className="relative z-10 px-1 py-4 space-y-2 min-h-full">
           {loading ? (
             <div className="flex justify-center py-10">
               <Loader2 size={24} className="animate-spin text-neon" />
@@ -517,25 +517,25 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
               return (
                 <div
                   key={msg.id}
-                  className={`flex gap-2.5 ${isMine ? 'flex-row-reverse' : 'flex-row'}`}
+                  className={`flex gap-0.5 ${isMine ? 'flex-row-reverse' : 'flex-row'}`}
                 >
                   {/* Avatar */}
                   {isRoleplay && papel?.avatar_url ? (
                     <span
                       onClick={() => setSelectedProfileRole(papel)}
-                      className="cursor-pointer shrink-0"
+                      className={`cursor-pointer shrink-0 ${isMine ? 'ml-0' : 'mr-0.5'}`}
                     >
                       <img
                         src={papel.avatar_url}
                         alt={papel.nome}
-                        className={`w-11 h-11 rounded-full object-cover border-2 ${isMine ? 'ml-1' : 'mr-1'}`}
+                        className="w-11 h-11 rounded-full object-cover border-2"
                         style={{ borderColor: papel.cor_balao }}
                       />
                     </span>
                   ) : isRoleplay && papel ? (
                     <span
                       onClick={() => setSelectedProfileRole(papel)}
-                      className="cursor-pointer shrink-0"
+                      className={`cursor-pointer shrink-0 ${isMine ? 'ml-2' : 'mr-4'}`}
                     >
                       <div
                         className="w-11 h-11 rounded-full flex items-center justify-center text-base font-bold border-2"
@@ -549,16 +549,16 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
                       </div>
                     </span>
                   ) : (
-                    <div className="w-9 h-9 rounded-full bg-navy-600 flex items-center justify-center text-sm font-bold shrink-0">
+                    <div className={`w-9 h-9 rounded-full bg-navy-600 flex items-center justify-center text-sm font-bold shrink-0 ${isMine ? 'ml-2' : 'mr-4'}`}>
                       {(isMine ? profile?.display_name : partner.display_name)?.charAt(0).toUpperCase()}
                     </div>
                   )}
 
                   {/* Bubble */}
-                  <div className={`max-w-[75%] ${isMine ? 'items-end' : 'items-start'} flex flex-col`}>
+                  <div className={`max-w-[75%] ${isMine ? 'items-end ml-0' : 'items-start mr-1'} flex flex-col`}>
                     {isRoleplay && papel && (
                       <span
-                        className="text-sm font-bold italic mb-0.5 px-1"
+                        className="text-sm font-bold italic mb-0.5 px-0"
                         style={{ color: papel.cor_balao, fontFamily: 'inherit' }}
                       >
                         {papel.nome}
@@ -572,8 +572,8 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
                           : isRoleplay && papel
                             ? { backgroundColor: msg.texto.startsWith('//') ? darkenHex(papel.cor_balao, 0.45) : papel.cor_balao, color: papel.cor_fonte }
                             : isMine
-                              ? { backgroundColor: msg.texto.startsWith('//') ? darkenHex('#8A2BE2', 0.45) : '#8A2BE2', color: '#FFFFFF' }
-                              : { backgroundColor: msg.texto.startsWith('//') ? darkenHex('#1A1C2D', 0.45) : '#1A1C2D', color: '#FFFFFF' }
+                              ? { backgroundColor: msg.texto.startsWith('//') ? darkenHex('#0D5CA8', 0.45) : '#0D5CA8', color: '#FFFFFF' }
+                              : { backgroundColor: msg.texto.startsWith('//') ? darkenHex('#041642', 0.45) : '#041642', color: '#FFFFFF' }
                       }
                     >
                       <p className="text-sm leading-relaxed break-words whitespace-pre-wrap" style={{ fontFamily: 'inherit' }}>{renderFormattedText(msg.texto)}</p>
@@ -594,7 +594,7 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
           <button
             onClick={() => setShowPapeisEquipados(true)}
             className="h-14 w-14 shrink-0 flex items-center justify-center bg-navy-700 rounded-full relative active:scale-95 transition
-                       border-2 border-neon shadow-lg shadow-purple-500/30 mt-8 translate-x-0.5"
+                       border-2 border-neon shadow-lg shadow-accent-500/30 mt-8 translate-x-0.5"
             title="Trocar papel"
           >
             <div className="w-12 h-12 rounded-full overflow-hidden flex items-center justify-center
@@ -611,7 +611,7 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
         {/* Right element: input capsule */}
         <div className="flex-1 flex flex-col gap-1 min-w-0 overflow-visible">
             {/* Shortcut bar */}
-            <div className="flex gap-2 px-0 overflow-x-auto no-scrollbar ml-4">
+            <div className="flex gap-2 px-0 overflow-x-auto no-scrollbar">
               <button onClick={() => insertShortcut('— ')} className="shrink-0 px-3 py-1.5 text-xs rounded-full bg-navy-800 text-white/60 hover:text-white hover:bg-navy-600 active:scale-95 transition border border-white/5">
                 — Speech
               </button>

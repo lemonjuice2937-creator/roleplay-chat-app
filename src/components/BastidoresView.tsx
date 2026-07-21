@@ -92,7 +92,7 @@ export default function BastidoresView({ onBack, onImported }: BastidoresViewPro
           <p className="text-xs text-white/40">Personagens salvos no seu perfil</p>
         </div>
         {selected.size > 0 && (
-          <span className="text-xs text-purple-400 font-medium">{selected.size} selecionado{selected.size > 1 ? 's' : ''}</span>
+          <span className="text-xs text-accent-400 font-medium">{selected.size} selecionado{selected.size > 1 ? 's' : ''}</span>
         )}
       </div>
 
@@ -100,7 +100,7 @@ export default function BastidoresView({ onBack, onImported }: BastidoresViewPro
       <div className="flex-1 overflow-y-auto">
         {loading ? (
           <div className="flex items-center justify-center py-20">
-            <Loader2 size={24} className="animate-spin text-purple-400" />
+            <Loader2 size={24} className="animate-spin text-accent-400" />
           </div>
         ) : personagens.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center gap-3 px-6">
@@ -121,7 +121,7 @@ export default function BastidoresView({ onBack, onImported }: BastidoresViewPro
                   onClick={() => toggleSelect(p.id)}
                   className={`flex items-center gap-3 p-3 rounded-2xl transition-all duration-150 cursor-pointer active:scale-[0.98] ${
                     isSelected
-                      ? 'bg-purple-500/20 border border-purple-500/40'
+                      ? 'bg-accent-500/20 border border-accent-500/40'
                       : 'bg-navy-800 border border-white/5 hover:bg-navy-750'
                   }`}
                 >
@@ -131,14 +131,14 @@ export default function BastidoresView({ onBack, onImported }: BastidoresViewPro
                       src={papel.avatar_url}
                       alt={papel.nome}
                       className="w-12 h-12 rounded-full object-cover shrink-0 border-2"
-                      style={{ borderColor: papel?.cor_balao || '#8A2BE2' }}
+                      style={{ borderColor: papel?.cor_balao || '#0D5CA8' }}
                     />
                   ) : (
                     <div
                       className="w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold shrink-0 border-2"
                       style={{
-                        backgroundColor: papel?.cor_balao || '#8A2BE2',
-                        borderColor: papel?.cor_balao || '#8A2BE2',
+                        backgroundColor: papel?.cor_balao || '#0D5CA8',
+                        borderColor: papel?.cor_balao || '#0D5CA8',
                         color: papel?.cor_fonte || '#FFFFFF',
                       }}
                     >
@@ -166,7 +166,7 @@ export default function BastidoresView({ onBack, onImported }: BastidoresViewPro
                     <div
                       className={`w-6 h-6 rounded-full flex items-center justify-center transition-all duration-150 ${
                         isSelected
-                          ? 'bg-purple-500 text-white'
+                          ? 'bg-accent-500 text-white'
                           : 'bg-navy-700 border border-white/20'
                       }`}
                     >
