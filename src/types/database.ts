@@ -3,6 +3,8 @@ export interface Usuario {
   username: string;
   display_name: string;
   avatar_url: string | null;
+  bio?: string | null;
+  profile_bg_url?: string | null;
   created_at?: string;
 }
 

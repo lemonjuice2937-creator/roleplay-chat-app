@@ -140,6 +140,17 @@ export async function listarPersonagens(userId: string): Promise<PersonagemSalvo
   return (data ?? []) as PersonagemSalvo[];
 }
 
+export async function listarPersonagensDe(userId: string): Promise<PersonagemSalvo[]> {
+  const { data, error } = await supabase
+    .from('personagens_salvos')
+    .select('*')
+    .eq('user_id', userId)
+    .order('nome', { ascending: true });
+
+  if (error) throw error;
+  return (data ?? []) as PersonagemSalvo[];
+}
+
 export async function deletarPersonagem(id: string): Promise<void> {
   const { error } = await supabase
     .from('personagens_salvos')

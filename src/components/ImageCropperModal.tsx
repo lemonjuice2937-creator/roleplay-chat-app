@@ -77,7 +77,6 @@ export default function ImageCropperModal({ image, onCropComplete, onClose }: Im
             aspect={1}
             cropShape="round"
             showGrid={true}
-            gridCropBox={false}
             onCropChange={onCropChange}
             onZoomChange={setZoom}
             onCropAreaChange={onCropAreaChange}

@@ -11,7 +11,7 @@ interface AuthContextValue {
   signUp: (email: string, password: string, username: string, displayName: string) => Promise<{ error: string | null }>;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signInWithGoogle: () => Promise<{ error: string | null }>;
-  updateProfile: (data: { username?: string; display_name?: string }) => Promise<{ error: string | null }>;
+  updateProfile: (data: { username?: string; display_name?: string; bio?: string; avatar_url?: string; profile_bg_url?: string }) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
@@ -99,7 +99,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error: null };
   }
 
-  async function updateProfile(data: { username?: string; display_name?: string }) {
+  async function updateProfile(data: { username?: string; display_name?: string; bio?: string; avatar_url?: string; profile_bg_url?: string }) {
     if (!session?.user) return { error: 'Não autenticado' };
 
     if (data.username) {
@@ -112,6 +112,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .maybeSingle();
       if (existing) return { error: 'Este @username já está em uso' };
       data.username = cleanUsername;
+    }
+
+    if (data.bio && data.bio.length > 200) {
+      return { error: 'Bio deve ter no máximo 200 caracteres' };
     }
 
     const { error } = await supabase

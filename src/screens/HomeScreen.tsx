@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import type { Usuario, Chat } from '../types/database';
-import { Search, MessageCircle, LogOut, Theater, Loader2 } from 'lucide-react';
+import { Search, MessageCircle, LogOut, Theater, Loader2, Pencil } from 'lucide-react';
 
 interface ChatWithPartner extends Chat {
   partner: Usuario;
@@ -10,12 +10,20 @@ interface ChatWithPartner extends Chat {
   last_at?: string;
 }
 
-export default function HomeScreen({ onOpenChat }: { onOpenChat: (chatId: string, partner: Usuario) => void }) {
+export default function HomeScreen({ 
+  onOpenChat, 
+  onViewProfile, 
+  onViewBastidores, 
+  onEditProfile 
+}: { 
+  onOpenChat: (chatId: string, partner: Usuario) => void;
+  onViewProfile: (user: Usuario) => void;
+  onViewBastidores: (userId: string, userName: string) => void;
+  onEditProfile: () => void;
+}) {
   const { profile, signOut } = useAuth();
   const [chats, setChats] = useState<ChatWithPartner[]>([]);
-  const [search, setSearch] = useState('');
-  const [searchResult, setSearchResult] = useState<Usuario | null>(null);
-  const [searching, setSearching] = useState(false);
+  const [allUsers, setAllUsers] = useState<Usuario[]>([]);
   const [loading, setLoading] = useState(true);
 
   const loadChats = useCallback(async () => {
@@ -65,33 +73,23 @@ export default function HomeScreen({ onOpenChat }: { onOpenChat: (chatId: string
     setLoading(false);
   }, [profile]);
 
-  useEffect(() => {
-    loadChats();
-  }, [loadChats]);
-
-  async function handleSearch() {
-    if (!search.trim()) return;
-    setSearching(true);
-    setSearchResult(null);
-
-    const cleanUsername = search.trim().toLowerCase().replace(/^@/, '');
+  const loadAllUsers = useCallback(async () => {
     const { data } = await supabase
       .from('usuarios')
       .select('*')
-      .eq('username', cleanUsername)
-      .maybeSingle();
+      .order('username', { ascending: true });
+    const users = (data ?? []) as Usuario[];
+    setAllUsers(users.filter(u => u.id !== profile?.id));
+  }, [profile?.id]);
 
-    if (data && data.id !== profile?.id) {
-      setSearchResult(data as Usuario);
-    } else {
-      setSearchResult(null);
-    }
-    setSearching(false);
-  }
+  useEffect(() => {
+    loadChats();
+    loadAllUsers();
+  }, [loadChats, loadAllUsers]);
 
   async function startChat(partner: Usuario) {
     if (!profile) return;
-    const { data: chatId, error } = await supabase.rpc('find_or_create_chat1', {
+    const { data: chatId, error } = await supabase.rpc('find_or_create_chat', {
       user1: profile.id,
       user2: partner.id,
     });
@@ -119,51 +117,51 @@ export default function HomeScreen({ onOpenChat }: { onOpenChat: (chatId: string
         </button>
       </header>
 
-      {/* Search */}
+      {/* Edit Profile Button */}
       <div className="px-5 mb-4">
-        <div className="flex gap-2">
-          <div className="flex-1 relative">
-            <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30" />
-            <input
-              type="text"
-              placeholder="Buscar por @username"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-              className="input-pill w-full pl-11"
-            />
-          </div>
-          <button
-            onClick={handleSearch}
-            disabled={searching}
-            className="btn-pill bg-neon text-white px-5"
-          >
-            {searching ? <Loader2 size={18} className="animate-spin" /> : 'Buscar'}
-          </button>
-        </div>
+        <button
+          onClick={onEditProfile}
+          className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl bg-navy-700 border border-white/5 active:scale-[0.98] transition hover:bg-navy-650"
+        >
+          <Pencil size={18} className="text-white/60" />
+          <span className="text-white/80 text-sm font-medium">Editar Meu Perfil</span>
+        </button>
+      </div>
 
-        {searchResult && (
-          <div className="mt-3 bg-navy-700 rounded-3xl p-4 flex items-center justify-between animate-in fade-in slide-in-from-top-2 duration-200">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-navy-600 flex items-center justify-center text-lg font-bold">
-                {searchResult.display_name.charAt(0).toUpperCase()}
-              </div>
-              <div>
-                <p className="font-medium">{searchResult.display_name}</p>
-                <p className="text-white/40 text-sm">@{searchResult.username}</p>
-              </div>
-            </div>
-            <button
-              onClick={() => startChat(searchResult)}
-              className="btn-pill bg-neon text-white text-sm py-2.5"
-            >
-              Conversar
-            </button>
+      {/* Users Directory */}
+      <div className="px-5 mb-4">
+        <h2 className="text-white/40 text-sm font-medium mb-3 px-1">Usuários Registrados</h2>
+        {allUsers.length === 0 ? (
+          <p className="text-white/30 text-sm text-center">Nenhum usuário encontrado</p>
+        ) : (
+          <div className="space-y-2">
+            {allUsers.map((user) => (
+              <button
+                key={user.id}
+                onClick={() => onViewProfile(user)}
+                className="w-full bg-navy-700 rounded-3xl p-4 flex items-center gap-3 active:scale-[0.98] transition text-left hover:bg-navy-650"
+              >
+                {user.avatar_url ? (
+                  <img
+                    src={user.avatar_url}
+                    alt={user.display_name}
+                    className="w-12 h-12 rounded-full object-cover shrink-0"
+                  />
+                ) : (
+                  <div className="w-12 h-12 rounded-full bg-navy-600 flex items-center justify-center text-lg font-bold shrink-0">
+                    {user.display_name?.charAt(0).toUpperCase() || '?'}
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium truncate">{user.display_name}</p>
+                  <p className="text-white/40 text-sm truncate">@{user.username}</p>
+                </div>
+                <div className="text-white/30">
+                  <Theater size={18} />
+                </div>
+              </button>
+            ))}
           </div>
-        )}
-
-        {search && !searchResult && !searching && (
-          <p className="text-white/30 text-sm text-center mt-3">Usuário não encontrado</p>
         )}
       </div>
 
