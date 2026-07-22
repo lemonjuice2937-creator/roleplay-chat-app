@@ -3,6 +3,9 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import AuthScreen from './screens/AuthScreen';
 import HomeScreen from './screens/HomeScreen';
 import ChatScreen from './screens/ChatScreen';
+import UserProfileScreen from './screens/UserProfileScreen';
+import EditProfileModal from './components/EditProfileModal';
+import BastidoresView from './components/BastidoresView';
 import GoogleProfileCompletion from './components/GoogleProfileCompletion';
 import type { Usuario } from './types/database';
 import { Loader2 } from 'lucide-react';
@@ -14,6 +17,9 @@ function needsProfileCompletion(username: string): boolean {
 function AppContent() {
   const { session, profile, loading } = useAuth();
   const [activeChat, setActiveChat] = useState<{ chatId: string; partner: Usuario } | null>(null);
+  const [viewProfile, setViewProfile] = useState<Usuario | null>(null);
+  const [viewBastidoresOf, setViewBastidoresOf] = useState<{ userId: string; userName: string } | null>(null);
+  const [editingProfile, setEditingProfile] = useState(false);
   const [profileCompleted, setProfileCompleted] = useState(false);
 
   if (loading) {
@@ -38,6 +44,43 @@ function AppContent() {
     return <GoogleProfileCompletion onComplete={() => setProfileCompleted(true)} />;
   }
 
+  if (viewBastidoresOf) {
+    return (
+      <BastidoresView
+        onBack={() => setViewBastidoresOf(null)}
+        onImported={() => setViewBastidoresOf(null)}
+        viewUserId={viewBastidoresOf.userId}
+        viewUserName={viewBastidoresOf.userName}
+      />
+    );
+  }
+
+  if (viewProfile) {
+    return (
+      <UserProfileScreen
+        user={viewProfile}
+        onBack={() => setViewProfile(null)}
+        onOpenChat={(chatId, partner) => {
+          setViewProfile(null);
+          setActiveChat({ chatId, partner });
+        }}
+        onOpenBastidores={(userId, userName) => {
+          setViewProfile(null);
+          setViewBastidoresOf({ userId, userName });
+        }}
+      />
+    );
+  }
+
+  if (editingProfile) {
+    return (
+      <EditProfileModal
+        onClose={() => setEditingProfile(false)}
+        onSaved={() => setEditingProfile(false)}
+      />
+    );
+  }
+
   if (activeChat) {
     return (
       <ChatScreen
@@ -48,7 +91,14 @@ function AppContent() {
     );
   }
 
-  return <HomeScreen onOpenChat={(chatId, partner) => setActiveChat({ chatId, partner })} />;
+  return (
+    <HomeScreen
+      onOpenChat={(chatId, partner) => setActiveChat({ chatId, partner })}
+      onViewProfile={(user) => setViewProfile(user)}
+      onViewBastidores={(userId, userName) => setViewBastidoresOf({ userId, userName })}
+      onEditProfile={() => setEditingProfile(true)}
+    />
+  );
 }
 
 export default function App() {

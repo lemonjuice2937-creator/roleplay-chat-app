@@ -17,7 +17,7 @@ export default function RoleplayCatalog({ onClose, onRefresh }: Props) {
   const { profile } = useAuth();
   const [nome, setNome] = useState('');
   const [descricao, setDescricao] = useState('');
-  const [corBalao, setCorBalao] = useState('#8A2BE2');
+  const [corBalao, setCorBalao] = useState('#0D5CA8');
   const [corFonte, setCorFonte] = useState('#FFFFFF');
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -26,7 +26,7 @@ export default function RoleplayCatalog({ onClose, onRefresh }: Props) {
   const [imageToCrop, setImageToCrop] = useState<string | null>(null);
   const [showBalaoPicker, setShowBalaoPicker] = useState(false);
   const [showFontePicker, setShowFontePicker] = useState(false);
-  const [balaoHue, setBalaoHue] = useState(() => hexToHsv('#8A2BE2').h);
+  const [balaoHue, setBalaoHue] = useState(() => hexToHsv('#0D5CA8').h);
   const [fonteHue, setFonteHue] = useState(() => hexToHsv('#FFFFFF').h);
 
   const fileRef = useRef<HTMLInputElement>(null);
@@ -146,10 +146,10 @@ export default function RoleplayCatalog({ onClose, onRefresh }: Props) {
           <div className="flex flex-col items-center gap-2">
             <button
               onClick={() => fileRef.current?.click()}
-              className="w-24 h-24 rounded-full bg-navy-800 border-2 border-dashed border-purple-500/30 flex items-center justify-center overflow-hidden active:scale-95 transition relative group"
+              className="w-24 h-24 rounded-full bg-navy-800 border-2 border-dashed border-accent-500/30 flex items-center justify-center overflow-hidden active:scale-95 transition relative group"
             >
               {uploading ? (
-                <Loader2 size={24} className="animate-spin text-purple-500" />
+                <Loader2 size={24} className="animate-spin text-accent-500" />
               ) : avatarUrl ? (
                 <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
               ) : (
@@ -168,7 +168,7 @@ export default function RoleplayCatalog({ onClose, onRefresh }: Props) {
               value={nome}
               onChange={(e) => setNome(e.target.value)}
               maxLength={20}
-              className="w-full bg-navy-800 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-purple-500 transition"
+              className="w-full bg-navy-800 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-accent-500 transition"
               placeholder="Ex: Salvatore"
             />
             <span className="text-[10px] text-white/30 text-right block mt-1">{nome.length}/20</span>
@@ -181,7 +181,7 @@ export default function RoleplayCatalog({ onClose, onRefresh }: Props) {
               value={descricao}
               onChange={(e) => setDescricao(e.target.value)}
               maxLength={250}
-              className="w-full bg-navy-800 border border-white/10 rounded-xl px-4 py-3 text-white resize-none focus:outline-none focus:border-purple-500 transition"
+              className="w-full bg-navy-800 border border-white/10 rounded-xl px-4 py-3 text-white resize-none focus:outline-none focus:border-accent-500 transition"
               placeholder="Quem é esse personagem?"
               rows={3}
             />
@@ -228,7 +228,7 @@ export default function RoleplayCatalog({ onClose, onRefresh }: Props) {
                       else if (val === '' || val === '#') setCorBalao(val);
                     }}
                     maxLength={7}
-                    className="w-full bg-navy-800 border border-white/10 rounded-lg px-3 py-2 text-white font-mono text-sm focus:outline-none focus:border-purple-500/50 transition-colors"
+                    className="w-full bg-navy-800 border border-white/10 rounded-lg px-3 py-2 text-white font-mono text-sm focus:outline-none focus:border-accent-500/50 transition-colors"
                     placeholder="#FF0000"
                   />
                 </div>
@@ -276,7 +276,7 @@ export default function RoleplayCatalog({ onClose, onRefresh }: Props) {
                       else if (val === '' || val === '#') setCorFonte(val);
                     }}
                     maxLength={7}
-                    className="w-full bg-navy-800 border border-white/10 rounded-lg px-3 py-2 text-white font-mono text-sm focus:outline-none focus:border-purple-500/50 transition-colors"
+                    className="w-full bg-navy-800 border border-white/10 rounded-lg px-3 py-2 text-white font-mono text-sm focus:outline-none focus:border-accent-500/50 transition-colors"
                     placeholder="#FFFFFF"
                   />
                 </div>
@@ -298,7 +298,7 @@ export default function RoleplayCatalog({ onClose, onRefresh }: Props) {
             type="button"
             onClick={handleCriarPapel}
             disabled={!nome.trim() || uploading || criando}
-            className="w-full py-4 bg-purple-600 hover:bg-purple-500 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed text-white font-medium rounded-2xl shadow-lg transition duration-200 flex items-center justify-center gap-2"
+            className="w-full py-4 bg-accent-600 hover:bg-accent-500 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed text-white font-medium rounded-2xl shadow-lg transition duration-200 flex items-center justify-center gap-2"
           >
             {(uploading || criando) && <Loader2 size={20} className="animate-spin" />}
             Criar papel

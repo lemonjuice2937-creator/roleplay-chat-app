@@ -103,7 +103,7 @@ export default function ReferencesView({ roleId, userId, canEdit, onBack }: Refe
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
-      <div className="w-full max-w-md bg-navy-900 rounded-3xl border border-purple-500/30 p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+      <div className="w-full max-w-md bg-navy-900 rounded-3xl border border-accent-500/30 p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
           <button
             onClick={onBack}
@@ -116,19 +116,19 @@ export default function ReferencesView({ roleId, userId, canEdit, onBack }: Refe
         </div>
 
         {canEdit && (
-          <div className="bg-navy-800 rounded-2xl p-4 mb-6 border border-purple-500/20">
+          <div className="bg-navy-800 rounded-2xl p-4 mb-6 border border-accent-500/20">
             <input
               type="text"
               value={nome}
               onChange={(e) => setNome(e.target.value)}
-              className="w-full text-white bg-navy-900 border border-purple-500/20 rounded-xl px-4 py-3 mb-3 focus:outline-none focus:border-purple-500/50 transition-colors text-sm"
+              className="w-full text-white bg-navy-900 border border-accent-500/20 rounded-xl px-4 py-3 mb-3 focus:outline-none focus:border-accent-500/50 transition-colors text-sm"
               placeholder="Nome da referência (opcional)"
             />
 
             <textarea
               value={descricao}
               onChange={(e) => setDescricao(e.target.value)}
-              className="w-full text-white bg-navy-900 border border-purple-500/20 rounded-xl px-4 py-3 mb-3 resize-none focus:outline-none focus:border-purple-500/50 transition-colors text-sm"
+              className="w-full text-white bg-navy-900 border border-accent-500/20 rounded-xl px-4 py-3 mb-3 resize-none focus:outline-none focus:border-accent-500/50 transition-colors text-sm"
               placeholder="Descrição (opcional)"
               rows={2}
             />
@@ -137,13 +137,13 @@ export default function ReferencesView({ roleId, userId, canEdit, onBack }: Refe
               onClick={() => fileInputRef.current?.click()}
               onDrop={handleDrop}
               onDragOver={(e) => e.preventDefault()}
-              className="w-full h-40 border-2 border-dashed border-purple-500/30 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:border-purple-500/50 transition-colors mb-4 overflow-hidden"
+              className="w-full h-40 border-2 border-dashed border-accent-500/30 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:border-accent-500/50 transition-colors mb-4 overflow-hidden"
             >
               {previewUrl ? (
                 <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
               ) : (
                 <>
-                  <Upload size={32} className="text-purple-500/50 mb-2" />
+                  <Upload size={32} className="text-accent-500/50 mb-2" />
                   <span className="text-white/40 text-sm">IMAGEM/UPLOAD</span>
                   <span className="text-white/30 text-xs mt-1">Clique ou arraste</span>
                 </>
@@ -161,7 +161,7 @@ export default function ReferencesView({ roleId, userId, canEdit, onBack }: Refe
             <button
               onClick={handleSave}
               disabled={!selectedFile || loading}
-              className="w-full py-3 bg-purple-600 hover:bg-purple-500 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 rounded-2xl font-medium text-white"
+              className="w-full py-3 bg-accent-600 hover:bg-accent-500 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 rounded-2xl font-medium text-white"
             >
               {loading ? 'Salvando...' : 'Salvar'}
             </button>
@@ -176,7 +176,7 @@ export default function ReferencesView({ roleId, userId, canEdit, onBack }: Refe
           {references.map((ref) => (
             <div
               key={ref.id}
-              className="bg-navy-800 rounded-2xl overflow-hidden border border-purple-500/20"
+              className="bg-navy-800 rounded-2xl overflow-hidden border border-accent-500/20"
             >
               <div className="aspect-square bg-navy-900">
                 <img
@@ -187,7 +187,7 @@ export default function ReferencesView({ roleId, userId, canEdit, onBack }: Refe
               </div>
               <div className="p-3">
                 {ref.nome && (
-                  <p className="text-purple-400 text-sm font-bold truncate" style={{ textShadow: '0 0 8px rgba(168,85,247,0.6), 0 0 20px rgba(168,85,247,0.3)' }}>{ref.nome}</p>
+                  <p className="text-accent-400 text-sm font-bold truncate" style={{ textShadow: '0 0 8px rgba(30,116,196,0.6), 0 0 20px rgba(30,116,196,0.3)' }}>{ref.nome}</p>
                 )}
                 {ref.descricao && (
                   <p className="text-white/50 text-xs truncate mt-1">{ref.descricao}</p>

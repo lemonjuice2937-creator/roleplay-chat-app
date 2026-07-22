@@ -35,14 +35,14 @@ export default function RoleProfileModal({ role, currentUserId, chatId, onClose,
   const [isAvatarHovered, setIsAvatarHovered] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [corBalao, setCorBalao] = useState(role.cor_balao ?? '#8A2BE2');
+  const [corBalao, setCorBalao] = useState(role.cor_balao ?? '#0D5CA8');
   const [corFonte, setCorFonte] = useState(role.cor_fonte ?? '#FFFFFF');
   const [cropModalOpen, setCropModalOpen] = useState(false);
   const [imageToCrop, setImageToCrop] = useState<string | null>(null);
   const [showBalaoPicker, setShowBalaoPicker] = useState(false);
   const [showFontePicker, setShowFontePicker] = useState(false);
   const [balaoHue, setBalaoHue] = useState(() => {
-    const hsv = hexToHsv(role.cor_balao ?? '#8A2BE2');
+    const hsv = hexToHsv(role.cor_balao ?? '#0D5CA8');
     return hsv.h;
   });
   const [fonteHue, setFonteHue] = useState(() => {
@@ -203,7 +203,7 @@ export default function RoleProfileModal({ role, currentUserId, chatId, onClose,
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
-      <div className="w-full max-w-md bg-navy-900 rounded-3xl border border-purple-500/30 p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+      <div className="w-full max-w-md bg-navy-900 rounded-3xl border border-accent-500/30 p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-bold text-white">Perfil do Personagem</h2>
           <button
@@ -217,7 +217,7 @@ export default function RoleProfileModal({ role, currentUserId, chatId, onClose,
         <div className="flex flex-col items-center mb-8">
           {canEdit ? (
             <div
-              className="relative w-24 h-24 rounded-full bg-navy-800 border-2 border-purple-500/30 flex items-center justify-center overflow-hidden mb-4 cursor-pointer group"
+              className="relative w-24 h-24 rounded-full bg-navy-800 border-2 border-accent-500/30 flex items-center justify-center overflow-hidden mb-4 cursor-pointer group"
               onMouseEnter={() => setIsAvatarHovered(true)}
               onMouseLeave={() => setIsAvatarHovered(false)}
               onClick={() => fileInputRef.current?.click()}
@@ -238,7 +238,7 @@ export default function RoleProfileModal({ role, currentUserId, chatId, onClose,
               )}
             </div>
           ) : (
-            <div className="w-24 h-24 rounded-full bg-navy-800 border-2 border-purple-500/30 flex items-center justify-center overflow-hidden mb-4">
+            <div className="w-24 h-24 rounded-full bg-navy-800 border-2 border-accent-500/30 flex items-center justify-center overflow-hidden mb-4">
               {avatarUrl ? (
                 <img src={avatarUrl} alt={role.nome} className="w-full h-full object-cover" />
               ) : (
@@ -262,7 +262,7 @@ export default function RoleProfileModal({ role, currentUserId, chatId, onClose,
                 value={nome}
                 onChange={(e) => setNome(e.target.value)}
                 maxLength={20}
-                className="w-full text-center text-xl font-bold text-white bg-navy-800 border border-purple-500/20 rounded-xl px-4 py-2 mb-1 focus:outline-none focus:border-purple-500/50 transition-colors"
+                className="w-full text-center text-xl font-bold text-white bg-navy-800 border border-accent-500/20 rounded-xl px-4 py-2 mb-1 focus:outline-none focus:border-accent-500/50 transition-colors"
                 placeholder="Nome do personagem"
               />
               <span className="text-[10px] text-white/30 block mb-2">{nome.length}/20</span>
@@ -277,7 +277,7 @@ export default function RoleProfileModal({ role, currentUserId, chatId, onClose,
                 value={descricao}
                 onChange={(e) => setDescricao(e.target.value)}
                 maxLength={250}
-                className="w-full text-center text-sm text-white/60 bg-navy-800 border border-purple-500/20 rounded-xl px-4 py-2 resize-none focus:outline-none focus:border-purple-500/50 transition-colors"
+                className="w-full text-center text-sm text-white/60 bg-navy-800 border border-accent-500/20 rounded-xl px-4 py-2 resize-none focus:outline-none focus:border-accent-500/50 transition-colors"
                 placeholder="Descrição (opcional)"
                 rows={3}
               />
@@ -332,7 +332,7 @@ export default function RoleProfileModal({ role, currentUserId, chatId, onClose,
                         else if (val === '' || val === '#') setCorBalao(val);
                       }}
                       maxLength={7}
-                      className="w-full bg-navy-800 border border-white/10 rounded-lg px-3 py-2 text-white font-mono text-sm focus:outline-none focus:border-purple-500/50 transition-colors"
+                      className="w-full bg-navy-800 border border-white/10 rounded-lg px-3 py-2 text-white font-mono text-sm focus:outline-none focus:border-accent-500/50 transition-colors"
                       placeholder="#FF0000"
                     />
                   </div>
@@ -380,7 +380,7 @@ export default function RoleProfileModal({ role, currentUserId, chatId, onClose,
                         else if (val === '' || val === '#') setCorFonte(val);
                       }}
                       maxLength={7}
-                      className="w-full bg-navy-800 border border-white/10 rounded-lg px-3 py-2 text-white font-mono text-sm focus:outline-none focus:border-purple-500/50 transition-colors"
+                      className="w-full bg-navy-800 border border-white/10 rounded-lg px-3 py-2 text-white font-mono text-sm focus:outline-none focus:border-accent-500/50 transition-colors"
                       placeholder="#FFFFFF"
                     />
                   </div>
@@ -402,7 +402,7 @@ export default function RoleProfileModal({ role, currentUserId, chatId, onClose,
         <div className="space-y-3 mb-6">
           <button
             onClick={() => setActiveSubView('referencias')}
-            className="w-full py-4 bg-purple-600 hover:bg-purple-500 active:scale-95 transition-all duration-200 rounded-2xl font-medium text-white flex items-center gap-3 px-6"
+            className="w-full py-4 bg-accent-600 hover:bg-accent-500 active:scale-95 transition-all duration-200 rounded-2xl font-medium text-white flex items-center gap-3 px-6"
           >
             <BookOpen size={22} />
             Banco de Referências
@@ -410,7 +410,7 @@ export default function RoleProfileModal({ role, currentUserId, chatId, onClose,
 
           <button
             onClick={() => setActiveSubView('vestuario')}
-            className="w-full py-4 bg-purple-600 hover:bg-purple-500 active:scale-95 transition-all duration-200 rounded-2xl font-medium text-white flex items-center gap-3 px-6"
+            className="w-full py-4 bg-accent-600 hover:bg-accent-500 active:scale-95 transition-all duration-200 rounded-2xl font-medium text-white flex items-center gap-3 px-6"
           >
             <Shirt size={22} />
             Vestuário
@@ -418,7 +418,7 @@ export default function RoleProfileModal({ role, currentUserId, chatId, onClose,
 
           <button
             onClick={() => setActiveSubView('skills')}
-            className="w-full py-4 bg-purple-600 hover:bg-purple-500 active:scale-95 transition-all duration-200 rounded-2xl font-medium text-white flex items-center gap-3 px-6"
+            className="w-full py-4 bg-accent-600 hover:bg-accent-500 active:scale-95 transition-all duration-200 rounded-2xl font-medium text-white flex items-center gap-3 px-6"
           >
             <Sparkles size={22} />
             Banco de Skills
@@ -430,7 +430,7 @@ export default function RoleProfileModal({ role, currentUserId, chatId, onClose,
             <button
               onClick={handleSave}
               disabled={!nome.trim() || saving}
-              className="w-full py-4 bg-navy-800 hover:bg-navy-700 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 rounded-2xl font-medium text-white border border-purple-500/20"
+              className="w-full py-4 bg-navy-800 hover:bg-navy-700 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 rounded-2xl font-medium text-white border border-accent-500/20"
             >
               {saving ? 'Salvando...' : 'Salvar'}
             </button>
@@ -448,7 +448,7 @@ export default function RoleProfileModal({ role, currentUserId, chatId, onClose,
           {canEdit && equipped && (
             <button
               onClick={() => setConfirmAction('leave')}
-              className="w-full py-4 bg-navy-800 hover:bg-navy-700 active:scale-95 transition-all duration-200 rounded-2xl font-medium text-white border border-purple-500/20"
+              className="w-full py-4 bg-navy-800 hover:bg-navy-700 active:scale-95 transition-all duration-200 rounded-2xl font-medium text-white border border-accent-500/20"
             >
               Deixar papel
             </button>

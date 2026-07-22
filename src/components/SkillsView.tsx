@@ -67,7 +67,7 @@ export default function SkillsView({ roleId, userId, canEdit, onBack }: SkillsVi
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
-      <div className="w-full max-w-md bg-navy-900 rounded-3xl border border-purple-500/30 p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+      <div className="w-full max-w-md bg-navy-900 rounded-3xl border border-accent-500/30 p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
           <button
             onClick={onBack}
@@ -80,19 +80,19 @@ export default function SkillsView({ roleId, userId, canEdit, onBack }: SkillsVi
         </div>
 
         {canEdit && (
-          <div className="bg-navy-800 rounded-2xl p-4 mb-6 border border-purple-500/20">
+          <div className="bg-navy-800 rounded-2xl p-4 mb-6 border border-accent-500/20">
             <input
               type="text"
               value={nome}
               onChange={(e) => setNome(e.target.value)}
-              className="w-full text-white bg-navy-900 border border-purple-500/20 rounded-xl px-4 py-3 mb-3 focus:outline-none focus:border-purple-500/50 transition-colors text-sm"
+              className="w-full text-white bg-navy-900 border border-accent-500/20 rounded-xl px-4 py-3 mb-3 focus:outline-none focus:border-accent-500/50 transition-colors text-sm"
               placeholder="Nome da habilidade"
             />
 
             <textarea
               value={descricao}
               onChange={(e) => setDescricao(e.target.value)}
-              className="w-full text-white bg-navy-900 border border-purple-500/20 rounded-xl px-4 py-3 mb-3 resize-none focus:outline-none focus:border-purple-500/50 transition-colors text-sm"
+              className="w-full text-white bg-navy-900 border border-accent-500/20 rounded-xl px-4 py-3 mb-3 resize-none focus:outline-none focus:border-accent-500/50 transition-colors text-sm"
               placeholder="Descrição da habilidade (efeito, custo, mecânica, etc.)"
               rows={3}
             />
@@ -100,7 +100,7 @@ export default function SkillsView({ roleId, userId, canEdit, onBack }: SkillsVi
             <button
               onClick={handleSave}
               disabled={!nome.trim() || loading}
-              className="w-full py-3 bg-purple-600 hover:bg-purple-500 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 rounded-2xl font-medium text-white flex items-center justify-center gap-2"
+              className="w-full py-3 bg-accent-600 hover:bg-accent-500 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 rounded-2xl font-medium text-white flex items-center justify-center gap-2"
             >
               <Plus size={18} />
               {loading ? 'Adicionando...' : 'Adicionar Habilidade'}
@@ -116,13 +116,13 @@ export default function SkillsView({ roleId, userId, canEdit, onBack }: SkillsVi
           {skills.map((skill) => (
             <div
               key={skill.id}
-              className="bg-navy-800 rounded-2xl p-4 border border-purple-500/20"
+              className="bg-navy-800 rounded-2xl p-4 border border-accent-500/20"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <Sparkles size={14} className="text-purple-400 shrink-0" />
-                    <p className="text-purple-400 font-bold text-lg truncate" style={{ textShadow: '0 0 8px rgba(168,85,247,0.6), 0 0 20px rgba(168,85,247,0.3)' }}>{skill.nome}</p>
+                    <Sparkles size={14} className="text-accent-400 shrink-0" />
+                    <p className="text-accent-400 font-bold text-lg truncate" style={{ textShadow: '0 0 8px rgba(30,116,196,0.6), 0 0 20px rgba(30,116,196,0.3)' }}>{skill.nome}</p>
                   </div>
                   {skill.descricao && (
                     <p className="text-white/50 text-sm leading-relaxed">{skill.descricao}</p>

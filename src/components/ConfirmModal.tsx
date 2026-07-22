@@ -9,7 +9,7 @@ export default function ConfirmModal({ message, onConfirm, onCancel, confirmText
   const isDestructive = confirmText === 'Excluir';
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
-      <div className="bg-navy-900 border border-purple-500/30 rounded-2xl p-6 shadow-2xl max-w-sm w-full mx-4">
+      <div className="bg-navy-900 border border-accent-500/30 rounded-2xl p-6 shadow-2xl max-w-sm w-full mx-4">
         <p className="text-white text-center mb-6">{message}</p>
         <div className="flex gap-3">
           <button
@@ -23,7 +23,7 @@ export default function ConfirmModal({ message, onConfirm, onCancel, confirmText
             className={`flex-1 py-2.5 active:scale-95 transition-all rounded-xl font-medium ${
               isDestructive
                 ? 'bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30'
-                : 'bg-purple-600 hover:bg-purple-500 text-white border border-purple-500/30'
+                : 'bg-accent-600 hover:bg-accent-500 text-white border border-accent-500/30'
             }`}
           >
             {confirmText}
