@@ -55,6 +55,11 @@
   100% { background-position: 200% 0; }
 }
 
+@keyframes slide-down {
+  0% { opacity: 0; transform: translateX(-50%) translateY(-16px); }
+  100% { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
 @layer utilities {
   .glow-purple {
     box-shadow: 0 0 180px rgba(13, 92, 168, 0.8);
@@ -73,5 +78,8 @@
   }
   .animate-shimmer {
     animation: shimmer 2s linear infinite;
+  }
+  .animate-slide-down {
+    animation: slide-down 0.3s ease-out;
   }
 }
