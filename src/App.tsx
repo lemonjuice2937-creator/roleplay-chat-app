@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import AuthScreen from './screens/AuthScreen';
 import HomeScreen from './screens/HomeScreen';
@@ -7,6 +7,8 @@ import UserProfileScreen from './screens/UserProfileScreen';
 import EditProfileModal from './components/EditProfileModal';
 import BastidoresView from './components/BastidoresView';
 import GoogleProfileCompletion from './components/GoogleProfileCompletion';
+import Toast from './components/Toast';
+import { useInAppNotifications } from './hooks/useInAppNotifications';
 import type { Usuario } from './types/database';
 import { Loader2 } from 'lucide-react';
 
@@ -21,6 +23,15 @@ function AppContent() {
   const [viewBastidoresOf, setViewBastidoresOf] = useState<{ userId: string; userName: string } | null>(null);
   const [editingProfile, setEditingProfile] = useState(false);
   const [profileCompleted, setProfileCompleted] = useState(false);
+
+  const handleNotificationNavigate = useCallback((chatId: string, partner: Usuario) => {
+    setViewProfile(null);
+    setViewBastidoresOf(null);
+    setEditingProfile(false);
+    setActiveChat({ chatId, partner });
+  }, []);
+
+  useInAppNotifications(activeChat?.partner?.id, handleNotificationNavigate);
 
   if (loading) {
     return (
@@ -105,6 +116,7 @@ export default function App() {
   return (
     <AuthProvider>
       <AppContent />
+      <Toast />
     </AuthProvider>
   );
 }

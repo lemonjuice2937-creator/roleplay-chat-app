@@ -1,0 +1,9 @@
+{
+  "appId": "com.och.app",
+  "appName": "OCH: Original Character House",
+  "webDir": "dist",
+  "customScheme": "com.och.app",
+  "server": {
+    "androidScheme": "https"
+  }
+}
