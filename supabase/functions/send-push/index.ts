@@ -101,7 +101,7 @@ Deno.serve(async (req) => {
             token: t.token,
             notification: {
               title: senderName,
-              body: texto.length > 100 ? texto.slice(0, 100) + "..." : texto,
+              body: `${senderName} te enviou uma mensagem nova!`,
             },
             data: {
               chat_id,
