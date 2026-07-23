@@ -19,17 +19,9 @@ export function useInAppNotifications(
 
         if (senderId && senderId !== activeChatUserId) {
           const title = notification.title || 'Nova mensagem';
-          const body = notification.body || '';
+          const body = notification.body || 'te enviou uma mensagem nova!';
 
-          if (!title && !body) return;
-
-          const { data: profile } = await supabase
-            .from('usuarios')
-            .select('display_name')
-            .eq('id', senderId)
-            .single();
-
-          showToast(profile?.display_name || title, body);
+          showToast(title, body);
         }
       }
     );

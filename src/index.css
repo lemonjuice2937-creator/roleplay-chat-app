@@ -60,6 +60,11 @@
   100% { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
 
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 16px rgba(13, 92, 168, 0.35); }
+  50% { box-shadow: 0 0 28px rgba(13, 92, 168, 0.6); }
+}
+
 @layer utilities {
   .glow-purple {
     box-shadow: 0 0 180px rgba(13, 92, 168, 0.8);
@@ -81,5 +86,8 @@
   }
   .animate-slide-down {
     animation: slide-down 0.3s ease-out;
+  }
+  .animate-glow-pulse {
+    animation: glow-pulse 2.5s ease-in-out infinite;
   }
 }
