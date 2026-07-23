@@ -101,7 +101,7 @@ Deno.serve(async (req) => {
             token: t.token,
             notification: {
               title: senderName,
-              body: `${senderName} te enviou uma mensagem nova!`,
+              body: `${senderName} te mandou uma nova mensagem!`,
             },
             data: {
               chat_id,

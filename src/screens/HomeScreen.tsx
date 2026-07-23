@@ -2,12 +2,13 @@ import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import type { Usuario, Chat } from '../types/database';
-import { Search, MessageCircle, LogOut, Theater, Loader2, Pencil } from 'lucide-react';
+import { Search, MessageCircle, LogOut, Theater, Loader2, Pencil, ChevronDown } from 'lucide-react';
 
 interface ChatWithPartner extends Chat {
   partner: Usuario;
   last_message?: string;
   last_at?: string;
+  unread_count?: number;
 }
 
 export default function HomeScreen({ 
@@ -25,6 +26,7 @@ export default function HomeScreen({
   const [chats, setChats] = useState<ChatWithPartner[]>([]);
   const [allUsers, setAllUsers] = useState<Usuario[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showUsers, setShowUsers] = useState(false);
 
   const loadChats = useCallback(async () => {
     if (!profile) return;
@@ -59,11 +61,20 @@ export default function HomeScreen({
         .maybeSingle();
 
       if (partner) {
+        // Buscar contagem de mensagens não lidas
+        const { count: unreadCount } = await supabase
+          .from('mensagens')
+          .select('*', { count: 'exact', head: true })
+          .eq('chat_id', chat.id)
+          .neq('sender_id', profile.id)
+          .is('read_at', null);
+
         enriched.push({
           ...chat,
           partner: partner as Usuario,
           last_message: lastMsg?.texto ?? '',
           last_at: lastMsg?.created_at ?? chat.created_at,
+          unread_count: unreadCount ?? 0,
         });
       }
     }
@@ -87,6 +98,24 @@ export default function HomeScreen({
     loadAllUsers();
   }, [loadChats, loadAllUsers]);
 
+  // Realtime: atualizar badges quando novas mensagens chegam
+  useEffect(() => {
+    if (!profile) return;
+
+    const channel = supabase
+      .channel('home-notifications')
+      .on('postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'mensagens' },
+        () => {
+          // Recarregar chats para atualizar contadores
+          loadChats();
+        }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [profile, loadChats]);
+
   async function startChat(partner: Usuario) {
     if (!profile) return;
     const { data: chatId, error } = await supabase.rpc('find_or_create_chat', {
@@ -94,7 +123,12 @@ export default function HomeScreen({
       user2: partner.id,
     });
 
-    if (chatId && !error) {
+    if (error) {
+      console.error('Erro ao criar chat:', error);
+      return;
+    }
+
+    if (chatId) {
       onOpenChat(chatId as string, partner);
     }
   }
@@ -128,43 +162,6 @@ export default function HomeScreen({
         </button>
       </div>
 
-      {/* Users Directory */}
-      <div className="px-5 mb-4">
-        <h2 className="text-white/40 text-sm font-medium mb-3 px-1">Usuários Registrados</h2>
-        {allUsers.length === 0 ? (
-          <p className="text-white/30 text-sm text-center">Nenhum usuário encontrado</p>
-        ) : (
-          <div className="space-y-2">
-            {allUsers.map((user) => (
-              <button
-                key={user.id}
-                onClick={() => onViewProfile(user)}
-                className="w-full bg-navy-700 rounded-3xl p-4 flex items-center gap-3 active:scale-[0.98] transition text-left hover:bg-navy-650"
-              >
-                {user.avatar_url ? (
-                  <img
-                    src={user.avatar_url}
-                    alt={user.display_name}
-                    className="w-12 h-12 rounded-full object-cover shrink-0"
-                  />
-                ) : (
-                  <div className="w-12 h-12 rounded-full bg-navy-600 flex items-center justify-center text-lg font-bold shrink-0">
-                    {user.display_name?.charAt(0).toUpperCase() || '?'}
-                  </div>
-                )}
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium truncate">{user.display_name}</p>
-                  <p className="text-white/40 text-sm truncate">@{user.username}</p>
-                </div>
-                <div className="text-white/30">
-                  <Theater size={18} />
-                </div>
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-
       {/* Chat list */}
       <div className="flex-1 overflow-y-auto px-5 pb-6">
         <h2 className="text-white/40 text-sm font-medium mb-3 px-1">Conversas</h2>
@@ -195,9 +192,62 @@ export default function HomeScreen({
                     {chat.last_message || `@${chat.partner.username}`}
                   </p>
                 </div>
+                {chat.unread_count && chat.unread_count > 0 && (
+                  <div className="min-w-[24px] h-6 rounded-full bg-sky-400 flex items-center justify-center px-2 shrink-0">
+                    <span className="text-white text-xs font-bold">{chat.unread_count > 99 ? '99+' : chat.unread_count}</span>
+                  </div>
+                )}
               </button>
             ))}
           </div>
+        )}
+      </div>
+
+      {/* Users Directory - Toggle */}
+      <div className="px-5 pb-6">
+        <button
+          onClick={() => setShowUsers(!showUsers)}
+          className="w-full flex items-center justify-between px-1 mb-3"
+        >
+          <h2 className="text-white/40 text-sm font-medium">Usuários Registrados</h2>
+          <ChevronDown
+            size={16}
+            className={`text-white/40 transition-transform ${showUsers ? 'rotate-180' : ''}`}
+          />
+        </button>
+        {showUsers && (
+          allUsers.length === 0 ? (
+            <p className="text-white/30 text-sm text-center">Nenhum usuário encontrado</p>
+          ) : (
+            <div className="space-y-2">
+              {allUsers.map((user) => (
+                <button
+                  key={user.id}
+                  onClick={() => onViewProfile(user)}
+                  className="w-full bg-navy-700 rounded-3xl p-4 flex items-center gap-3 active:scale-[0.98] transition text-left hover:bg-navy-650"
+                >
+                  {user.avatar_url ? (
+                    <img
+                      src={user.avatar_url}
+                      alt={user.display_name}
+                      className="w-12 h-12 rounded-full object-cover shrink-0"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 rounded-full bg-navy-600 flex items-center justify-center text-lg font-bold shrink-0">
+                      {user.display_name?.charAt(0).toUpperCase() || '?'}
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium truncate">{user.display_name}</p>
+                    <p className="text-white/40 text-sm truncate">@{user.username}</p>
+                  </div>
+                  <div className="text-white/30">
+                    <Theater size={18} />
+                  </div>
+                </button>
+              ))}
+            </div>
+          )
         )}
       </div>
     </div>

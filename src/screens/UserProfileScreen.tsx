@@ -22,7 +22,11 @@ export default function UserProfileScreen({ user, onBack, onOpenChat, onOpenBast
       user1: profile.id,
       user2: user.id,
     });
-    if (chatId && !error) {
+    if (error) {
+      console.error('Erro ao criar chat:', error);
+      return;
+    }
+    if (chatId) {
       onOpenChat(chatId as string, user);
     }
   };

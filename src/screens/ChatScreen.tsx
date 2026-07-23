@@ -111,7 +111,22 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
       .eq('chat_id', chatId)
       .order('created_at', { ascending: true });
 
-    if (data) setMessages(data as unknown as Mensagem[]);
+    if (data) {
+      setMessages(data as unknown as Mensagem[]);
+
+      // Marcar mensagens não lidas como lidas
+      if (profile) {
+        const unreadIds = (data as unknown as Mensagem[])
+          .filter(m => m.sender_id !== profile.id && !m.read_at)
+          .map(m => m.id);
+        if (unreadIds.length > 0) {
+          await supabase.rpc('mark_messages_as_read', {
+            p_chat_id: chatId,
+            p_user_id: profile.id
+          });
+        }
+      }
+    }
     setLoading(false);
   }, [chatId]);
 
