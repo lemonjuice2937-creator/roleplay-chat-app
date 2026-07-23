@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 import type { Session, User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import type { Usuario } from '../types/database';
+import { initPushNotifications } from '../services/pushNotifications';
 
 interface AuthContextValue {
   session: Session | null;
@@ -56,6 +57,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return () => listener.subscription.unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (session?.user?.id) {
+      initPushNotifications(session.user.id);
+    }
+  }, [session?.user?.id]);
 
   async function signUp(email: string, password: string, username: string, displayName: string) {
     const cleanUsername = username.toLowerCase().replace(/[^a-z0-9_]/g, '');
