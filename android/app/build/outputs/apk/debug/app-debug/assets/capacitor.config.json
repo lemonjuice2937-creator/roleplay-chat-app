@@ -1,8 +1,0 @@
-{
-	"appId": "com.och.app",
-	"appName": "OCH: Original Character House",
-	"webDir": "dist",
-	"server": {
-		"androidScheme": "https"
-	}
-}

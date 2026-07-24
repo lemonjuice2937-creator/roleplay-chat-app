@@ -4,7 +4,7 @@
     "type": "APK",
     "kind": "Directory"
   },
-  "applicationId": "com.meuchatapp.app.test",
+  "applicationId": "com.och.app.test",
   "variantName": "debugAndroidTest",
   "elements": [
     {

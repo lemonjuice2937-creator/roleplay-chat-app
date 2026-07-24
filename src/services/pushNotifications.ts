@@ -1,4 +1,5 @@
 import { PushNotifications } from '@capacitor/push-notifications';
+import { LocalNotifications } from '@capacitor/local-notifications';
 import { Capacitor } from '@capacitor/core';
 import { supabase } from '../lib/supabase';
 
@@ -15,6 +16,16 @@ export async function initPushNotifications(userId: string) {
     console.warn('Permissão de notificação negada pelo usuário.');
     return;
   }
+
+  await LocalNotifications.createChannel({
+    id: 'chat_messages',
+    name: 'Mensagens do Chat',
+    description: 'Notificações de novas mensagens no chat',
+    importance: 5,
+    visibility: 1,
+    sound: 'default',
+    vibration: true,
+  });
 
   await PushNotifications.register();
 

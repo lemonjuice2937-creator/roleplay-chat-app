@@ -7,11 +7,13 @@
 @layer base {
   * {
     -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
   }
 
   body {
     @apply bg-navy-800 text-white font-serif antialiased;
     overscroll-behavior: none;
+    overflow-x: hidden;
   }
 
   /* Scrollbar styling */

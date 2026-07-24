@@ -1,8 +1,12 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import type { Usuario } from '../types/database';
 import { initPushNotifications } from '../services/pushNotifications';
+import type { PluginListenerHandle } from '@capacitor/core';
+import { Capacitor } from '@capacitor/core';
+import { Browser } from '@capacitor/browser';
+import { App } from '@capacitor/app';
 
 interface AuthContextValue {
   session: Session | null;
@@ -23,6 +27,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Usuario | null>(null);
   const [loading, setLoading] = useState(true);
+  const appUrlOpenListenerRef = useRef<PluginListenerHandle | null>(null);
 
   async function fetchProfile(userId: string) {
     const { data } = await supabase
@@ -55,7 +60,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       })();
     });
 
-    return () => listener.subscription.unsubscribe();
+    if (Capacitor.isNativePlatform()) {
+      App.addListener('appUrlOpen', async (event) => {
+        if (event.url.startsWith('com.och.app://callback')) {
+          const urlObj = new URL(event.url);
+          const code = urlObj.searchParams.get('code');
+          if (code) {
+            await supabase.auth.exchangeCodeForSession(code);
+            await Browser.close();
+          }
+        }
+      }).then((handle) => {
+        appUrlOpenListenerRef.current = handle;
+      });
+    }
+
+    return () => {
+      listener.subscription.unsubscribe();
+      appUrlOpenListenerRef.current?.remove();
+    };
   }, []);
 
   useEffect(() => {
@@ -96,13 +119,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   async function signInWithGoogle() {
-    const { error } = await supabase.auth.signInWithOAuth({
+    if (!Capacitor.isNativePlatform()) {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin,
+        },
+      });
+      if (error) return { error: error.message };
+      return { error: null };
+    }
+
+    setLoading(true);
+
+    const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: window.location.origin,
-      },
+        redirectTo: 'com.och.app://callback',
+        skipBrowserRedirect: true,
+      } as any,
     });
-    if (error) return { error: error.message };
+
+    if (error) {
+      setLoading(false);
+      return { error: error.message };
+    }
+
+    if (!data?.url) {
+      setLoading(false);
+      return { error: 'Erro ao iniciar autenticação' };
+    }
+
+    await Browser.open({ url: data.url });
     return { error: null };
   }
 

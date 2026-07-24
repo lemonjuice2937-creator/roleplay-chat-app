@@ -1,9 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <color name="colorAccent">#1E74C4</color>
+    <color name="colorPrimary">#0D5CA8</color>
+    <color name="colorPrimaryDark">#002063</color>
     <color name="ic_launcher_background">#FFFFFF</color>
     <string name="app_name">OCH</string>
-    <string name="custom_url_scheme">com.meuchatapp.app</string>
-    <string name="package_name">com.meuchatapp.app</string>
+    <string name="custom_url_scheme">com.och.app</string>
+    <string name="gcm_defaultSenderId" translatable="false">451857265557</string>
+    <string name="google_api_key" translatable="false">AIzaSyCycs0DiTJnGCx9IUwPuCr1E-2egtwJ9O0</string>
+    <string name="google_app_id" translatable="false">1:451857265557:android:585ace8e132922f6367c9c</string>
+    <string name="google_crash_reporting_api_key" translatable="false">AIzaSyCycs0DiTJnGCx9IUwPuCr1E-2egtwJ9O0</string>
+    <string name="google_storage_bucket" translatable="false">och-app-1ceb8.firebasestorage.app</string>
+    <string name="package_name">com.och.app</string>
+    <string name="project_id" translatable="false">och-app-1ceb8</string>
     <string name="title_activity_main">OCH</string>
     <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
         

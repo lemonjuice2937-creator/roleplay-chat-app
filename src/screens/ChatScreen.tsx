@@ -410,7 +410,7 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
   }, [pinnedNotes, selectedNoteId]);
 
   return (
-    <div className="h-screen flex flex-col bg-navy-800 overflow-hidden">
+    <div className="h-screen flex flex-col bg-navy-800 overflow-hidden" style={{ overscrollBehavior: 'contain' }}>
       <style>{`
         .avatar-overlay-50::after {
           content: '';
@@ -498,7 +498,7 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
       )}
 
       {/* Messages area */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto relative" onClick={() => { if (showCatalog) setShowCatalog(false); }}>
+      <div ref={scrollRef} className="flex-1 overflow-y-auto overflow-x-hidden relative" onClick={() => { if (showCatalog) setShowCatalog(false); }}>
         {/* Background layer (z-0) */}
         {bgUrl && (
           <div className="fixed inset-0 z-0">
@@ -609,7 +609,7 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
           <button
             onClick={() => setShowPapeisEquipados(true)}
             className="h-14 w-14 shrink-0 flex items-center justify-center bg-navy-700 rounded-full relative active:scale-95 transition
-                       border-2 border-neon shadow-lg shadow-accent-500/30 mt-8 translate-x-0.5"
+                       border-2 border-neon shadow-lg shadow-accent-500/30 mt-8"
             title="Trocar papel"
           >
             <div className="w-12 h-12 rounded-full overflow-hidden flex items-center justify-center
@@ -624,7 +624,7 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
         )}
 
         {/* Right element: input capsule */}
-        <div className="flex-1 flex flex-col gap-1 min-w-0 overflow-visible">
+        <div className="flex-1 flex flex-col gap-1 min-w-0">
             {/* Shortcut bar */}
             <div className="flex gap-2 px-0 overflow-x-auto no-scrollbar">
               <button onClick={() => insertShortcut('— ')} className="shrink-0 px-3 py-1.5 text-xs rounded-full bg-navy-800 text-white/60 hover:text-white hover:bg-navy-600 active:scale-95 transition border border-white/5">
@@ -657,7 +657,7 @@ export default function ChatScreen({ chatId, partner, onBack }: { chatId: string
               <button
                 onClick={handleSend}
                 disabled={!input.trim() || sending}
-                className="w-11 h-11 rounded-full bg-neon flex items-center justify-center shrink-0 active:scale-90 transition disabled:opacity-40 ml-4 translate-x-2"
+                className="w-11 h-11 rounded-full bg-neon flex items-center justify-center shrink-0 active:scale-90 transition disabled:opacity-40 ml-4"
               >
                 {sending ? (
                   <Loader2 size={20} className="animate-spin text-white" />

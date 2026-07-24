@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import AuthScreen from './screens/AuthScreen';
 import HomeScreen from './screens/HomeScreen';
@@ -11,6 +11,8 @@ import Toast from './components/Toast';
 import { useInAppNotifications } from './hooks/useInAppNotifications';
 import type { Usuario } from './types/database';
 import { Loader2 } from 'lucide-react';
+import { Capacitor } from '@capacitor/core';
+import { App as CapacitorApp } from '@capacitor/app';
 
 function needsProfileCompletion(username: string): boolean {
   return /_(gmail|hotmail|outlook|yahoo|live|icloud)\.[a-z]{2,}$/.test(username);
@@ -32,6 +34,30 @@ function AppContent() {
   }, []);
 
   useInAppNotifications(activeChat?.partner?.id, handleNotificationNavigate);
+
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+
+    const backButtonRef: { remove: () => void } = { remove: () => {} };
+
+    CapacitorApp.addListener('backButton', () => {
+      if (activeChat) {
+        setActiveChat(null);
+      } else if (viewProfile) {
+        setViewProfile(null);
+      } else if (viewBastidoresOf) {
+        setViewBastidoresOf(null);
+      } else if (editingProfile) {
+        setEditingProfile(false);
+      }
+    }).then((h) => {
+      backButtonRef.remove = () => h.remove();
+    });
+
+    return () => {
+      backButtonRef.remove();
+    };
+  }, [activeChat, viewProfile, viewBastidoresOf, editingProfile]);
 
   if (loading) {
     return (

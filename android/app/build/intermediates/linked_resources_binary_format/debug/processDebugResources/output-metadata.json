@@ -4,7 +4,7 @@
     "type": "LINKED_RESOURCES_BINARY_FORMAT",
     "kind": "Directory"
   },
-  "applicationId": "com.meuchatapp.app",
+  "applicationId": "com.och.app",
   "variantName": "debug",
   "elements": [
     {
